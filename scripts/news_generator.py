@@ -2,15 +2,18 @@ import os
 import re
 import json
 import datetime
+import time  # 新增 time 模块用于等待
 from google import genai
 
 # ================= 配置区 =================
+# 从 GitHub Secrets 获取 API Key
 API_KEY = os.environ.get("GEMINI_API_KEY")
 HTML_FILE_PATH = "index.html"
 
 def get_current_week_info():
     """获取当前的日期、年份和周数"""
     today = datetime.date.today()
+    # ISO 周历
     year, week_num, _ = today.isocalendar()
     return {
         "vol": f"VOL.{week_num:02d}",
@@ -22,17 +25,18 @@ def get_current_week_info():
 def extract_json_from_text(text):
     """尝试从混合文本中提取 JSON 列表"""
     try:
+        # 1. 尝试直接解析
         return json.loads(text)
     except json.JSONDecodeError:
         pass
 
     try:
-        # 提取 ```json ... ```
+        # 2. 尝试提取 Markdown 代码块 ```json ... ```
         match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', text)
         if match:
             return json.loads(match.group(1))
         
-        # 提取 [ ... ]
+        # 3. 尝试寻找最外层的方括号 []
         start = text.find('[')
         end = text.rfind(']')
         if start != -1 and end != -1:
@@ -45,15 +49,16 @@ def extract_json_from_text(text):
     return None
 
 def generate_news_content():
-    """调用 Gemini API 生成新闻数据 (使用新版 SDK)"""
+    """调用 Gemini API 生成新闻数据 (带重试机制)"""
     if not API_KEY:
-        raise ValueError("❌ 错误: 未找到 GEMINI_API_KEY。请在 GitHub Secrets 中配置。")
+        raise ValueError("❌ 错误: 未找到 GEMINI_API_KEY 环境变量。请在 GitHub Secrets 或本地环境变量中配置。")
 
-    print(f"🚀 正在连接 Gemini API (新版 SDK)...")
+    print(f"🚀 正在连接 Gemini API (key length: {len(API_KEY)})...")
     
-    # 关键修改：使用新版 SDK 客户端
+    # 初始化客户端
     client = genai.Client(api_key=API_KEY)
 
+    # 核心 Prompt
     prompt = f"""
     你是一名专业、犀利、有深度的国际教育与设计艺术资讯主编。
     现在是 {datetime.date.today().strftime("%Y年%m月%d日")}。
@@ -87,23 +92,45 @@ def generate_news_content():
 
     print("🔍 正在调用 Gemini API 进行深度内容生成... (Target: 30 items)")
     
-    try:
-        # 关键修改：使用新版 SDK 的调用方式
-        response = client.models.generate_content(
-            model='gemini-2.0-flash-exp',
-            contents=prompt,
-            config={
-                'tools': [{'google_search': {}}], # 新版 SDK 的搜索工具配置
-                'response_mime_type': 'application/json' # 强制 JSON 模式
-            }
-        )
-    except Exception as e:
-        print(f"❌ API 调用失败: {e}")
-        raise
+    # --- 重试逻辑开始 ---
+    max_retries = 5  # 最大重试次数
+    base_delay = 10  # 基础等待时间（秒）
+    response = None
+
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.0-flash-exp',
+                contents=prompt,
+                config={
+                    'tools': [{'google_search': {}}],
+                    'response_mime_type': 'application/json'
+                }
+            )
+            # 如果成功，跳出循环
+            break
+        except Exception as e:
+            error_msg = str(e).lower()
+            # 检查是否为配额不足 (429) 或资源耗尽错误
+            if "quota" in error_msg or "429" in error_msg or "resource_exhausted" in error_msg:
+                if attempt < max_retries - 1:
+                    wait_time = base_delay * (2 ** attempt) # 指数退避: 10s, 20s, 40s, 80s...
+                    print(f"⚠️ API 配额不足 (Attempt {attempt + 1}/{max_retries}). 等待 {wait_time} 秒后重试...")
+                    time.sleep(wait_time)
+                else:
+                    print(f"❌ API 重试次数耗尽: {e}")
+                    raise
+            else:
+                # 如果是其他错误（如参数错误），直接抛出
+                print(f"❌ API 调用发生非配额错误: {e}")
+                raise
+    # --- 重试逻辑结束 ---
+
+    if not response:
+        raise ValueError("❌ 未能获取有效的 API 响应")
 
     print("✅ API 响应成功，正在解析 JSON...")
     
-    # 新版 SDK 直接从 response.text 获取内容
     news_data = extract_json_from_text(response.text)
     
     if not news_data:
@@ -116,7 +143,7 @@ def generate_news_content():
 def update_html_file(news_data, week_info):
     """读取 index.html 并更新 JS 数据部分"""
     if not os.path.exists(HTML_FILE_PATH):
-        raise FileNotFoundError(f"❌ 未找到 {HTML_FILE_PATH} 文件")
+        raise FileNotFoundError(f"❌ 未找到 {HTML_FILE_PATH} 文件，请确保脚本在项目根目录下运行。")
 
     with open(HTML_FILE_PATH, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -129,7 +156,11 @@ def update_html_file(news_data, week_info):
             year: "{week_info['year']}"
         }};"""
     
-    content = re.sub(r'const\s+ISSUE_CONFIG\s*=\s*\{[\s\S]*?\};', new_config_str, content)
+    content = re.sub(
+        r'const\s+ISSUE_CONFIG\s*=\s*\{[\s\S]*?\};', 
+        new_config_str, 
+        content
+    )
 
     # 2. 更新 SECTIONS
     static_props = {
@@ -148,16 +179,16 @@ def update_html_file(news_data, week_info):
     }
 
     js_sections_str = "const SECTIONS = [\n"
+    
     global_id_counter = 1
 
-    # 处理 AI 返回的数据（兼容列表或字典结构）
+    # 数据容错处理：确保 news_data 是列表
     data_list = news_data if isinstance(news_data, list) else []
-    
-    # 建立 ID 到数据的映射，防止 AI 返回顺序错乱
-    data_map = {item['id']: item for item in data_list if 'id' in item}
+    data_map = {item.get('id'): item for item in data_list if isinstance(item, dict) and 'id' in item}
 
-    # 按照我们预定义的顺序遍历板块
+    # 按固定顺序遍历板块
     for sec_key in ['global', 'education', 'university', 'design', 'summer', 'competitions']:
+        # 获取对应板块数据，如果不存在则为空
         section_data = data_map.get(sec_key, {'items': []})
         props = static_props.get(sec_key, {})
         display_title = titles.get(sec_key, sec_key.upper())
@@ -213,7 +244,11 @@ def update_html_file(news_data, week_info):
 
     js_sections_str += "        ];"
 
-    content = re.sub(r'const\s+SECTIONS\s*=\s*\[([\s\S]*?)\];', js_sections_str, content)
+    content = re.sub(
+        r'const\s+SECTIONS\s*=\s*\[([\s\S]*?)\];', 
+        js_sections_str, 
+        content
+    )
 
     with open(HTML_FILE_PATH, 'w', encoding='utf-8') as f:
         f.write(content)
@@ -225,8 +260,10 @@ if __name__ == "__main__":
         print("🎬 开始执行周更任务...")
         week_info = get_current_week_info()
         print(f"📅 目标版本: {week_info['vol']} ({week_info['date']})")
+        
         news_data = generate_news_content()
         update_html_file(news_data, week_info)
+        
         print("🎉 所有任务完成。")
     except Exception as e:
         print(f"❌ 任务失败: {e}")
