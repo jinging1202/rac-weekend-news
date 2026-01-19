@@ -2,7 +2,8 @@ import os
 import re
 import json
 import datetime
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # ================= 配置区 =================
 # 从 GitHub Secrets 获取 API Key
@@ -48,19 +49,18 @@ def extract_json_from_text(text):
     return None
 
 def generate_news_content():
-    """调用 Gemini API 生成新闻数据"""
+    """调用 Gemini API 生成新闻数据 (使用新版 google-genai SDK)"""
     if not API_KEY:
-        raise ValueError("❌ 错误: 未找到 GEMINI_API_KEY 环境变量。")
+        raise ValueError("❌ 错误: 未找到 GEMINI_API_KEY 环境变量。请在 GitHub Secrets 或本地环境变量中配置。")
 
     print(f"🚀 正在连接 Gemini API (key length: {len(API_KEY)})...")
-    genai.configure(api_key=API_KEY)
     
-    # 使用支持 Google Search 的模型
-    model = genai.GenerativeModel('gemini-2.0-flash-exp')
+    # 初始化新版客户端
+    client = genai.Client(api_key=API_KEY)
 
     # 核心 Prompt
     prompt = f"""
-    你是一名专业、犀利、有深度的国际教育与设计艺术资讯主编。
+    你是一名严格遵守事实核查与信息溯源规范的国际教育与全球资讯编辑。
     现在是 {datetime.date.today().strftime("%Y年%m月%d日")}。
 
     请你完成以下任务，并【只输出最终资讯内容本身】。为了让程序能够处理，**请务必将结果封装为 JSON 格式**（具体格式见下方）。
@@ -68,8 +68,18 @@ def generate_news_content():
     【时间范围】
     仅检索并整理【最近 7 天内首次发布】的信息。
 
+    【信息来源要求】
+    仅限以下来源：
+    - 微博、微信公众号（高校 / 权威媒体官方账号）
+    - 国内外权威新闻媒体官方账号（如 BBC / Reuters / FT / NYTimes 等）
+    - 海外大学官方 网站/Instagram / X(Twitter) / Facebook 账号
+
+    【明确排除】
+    - 任何教培、留学中介、商业推广内容（如新东方、启德、IDP 等）
+    - 二次转载、观点评论、未经证实的信息
+
     【内容主题范围】
-    请围绕以下六类资讯进行筛选与整理（**每个板块必须包含 5 条资讯，总共 30 条**）：
+    请围绕以下六类资讯进行筛选与整理（每个板块精选 5 条，总计 30 条）：
     1. global (社会热点 / 国际新闻)
     2. education (海内外热点教育类新闻)
     3. university (世界顶尖院校官方动态)
@@ -77,57 +87,69 @@ def generate_news_content():
     5. summer (Summer School / 暑期科研项目信息)
     6. competitions (截止时间在未来的国际权威竞赛)
 
-    【深度内容生成要求】
-    不要只写简介！**每条新闻必须是一篇 400-600 字的深度微报道。**
-    
-    1.  **key_points**: 提炼 3 个核心情报（Bullet points）。
-    2.  **relevant_majors**: 列出受此新闻影响的具体设计/艺术专业名称（英文）。
-    3.  **fullContent**: 
-        * 必须包含 HTML 标签（`<h3>` 小标题, `<p>` 段落, `<ul>` 列表）。
-        * 内容必须详实，包含数据支持、背景分析和未来预测。
-        * 结构建议：【背景/事件】->【深度分析/技术细节】->【对留学生/行业的具体影响】。
-    4.  **analysis**: 针对学生/家长的犀利点评（2句话），直击痛点，给出行动建议。
+    【筛选与排序规则】
+    - 总数：严格保留 30 条
+    - 按“社交媒体讨论热度 + 权威性”综合排序
+    - 同一事件只保留 1 条
 
     【格式要求转换】
+    请将你作为编辑整理好的内容映射到以下 JSON 结构中。
+    对于 content 字段，请严格执行：**关键词 / 关键词**：两行文字概述事件核心信息。
+    对于 source 和 date 字段，请提取括号内的（发布方 – 推送时间）。
+    
+    **关键要求：**
+    1. `url`: 必须是真实的、可访问的原始新闻链接（以 http 开头），不能留空。
+    2. `image`: 请尝试寻找每条新闻的相关图片 URL。
+    3. `analysis`: 针对该新闻，写一段简短犀利的“专家点评”（2句话），针对学生/家长，分析其对申请或未来的影响。
+
     JSON 输出示例：
     [
         {{
             "id": "global",
             "items": [
                 {{
-                    "title": "标题 (Emoji + 中文)", 
-                    "content": "**关键词**：两行摘要...", 
+                    "title": "关键词 (Emoji + 中文)", 
+                    "content": "**关键词 / 关键词**：两行文字概述事件核心信息。", 
                     "source": "发布方", 
                     "date": "MM.DD", 
-                    "image": "https://...",
+                    "image": "https://example.com/news-image.jpg",
                     "tags": ["Tag1", "Tag2"],
-                    "relevant_majors": ["Interaction Design", "HCI"],
-                    "key_points": ["核心点1", "核心点2", "核心点3"],
-                    "url": "https://...",
-                    "fullContent": "<h3>小标题</h3><p>详细内容...</p>",
-                    "analysis": "专家点评..."
+                    "url": "https://www.bbc.com/news/example-story",
+                    "fullContent": "<p>这里写一段详细报道（约150字），支持HTML标签。</p>",
+                    "analysis": "这里写专家点评..."
                 }}
             ]
-        }}
+        }},
+        ... 其他板块
     ]
     """
 
-    # 配置工具
-    tools = [{'google_search': {}}]
-    
-    print("🔍 正在调用 Gemini API 进行深度内容生成... (Target: 30 items)")
+    print("🔍 正在调用 Gemini API 进行严格筛选与生成... (Target: 30 items)")
     try:
-        response = model.generate_content(prompt, tools=tools)
+        # 使用新版 SDK 调用方法
+        response = client.models.generate_content(
+            model='gemini-2.0-flash-exp',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())] # 新版工具定义方式
+            )
+        )
     except Exception as e:
         print(f"❌ API 调用失败: {e}")
         raise
 
     print("✅ API 响应成功，正在解析 JSON...")
     
+    # 新版 SDK 的 response.text 直接可用
     news_data = extract_json_from_text(response.text)
     
     if not news_data:
         print("❌ 错误: 无法从 AI 响应中提取有效的 JSON 数据。")
+        print("🔍 原始响应片段 (前500字符):")
+        try:
+            print(response.text[:500] + "...")
+        except:
+            print("无法打印响应内容")
         raise ValueError("Invalid JSON response from AI")
         
     return news_data
@@ -135,7 +157,7 @@ def generate_news_content():
 def update_html_file(news_data, week_info):
     """读取 index.html 并更新 JS 数据部分"""
     if not os.path.exists(HTML_FILE_PATH):
-        raise FileNotFoundError(f"❌ 未找到 {HTML_FILE_PATH} 文件")
+        raise FileNotFoundError(f"❌ 未找到 {HTML_FILE_PATH} 文件，请确保脚本在项目根目录下运行。")
 
     with open(HTML_FILE_PATH, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -156,12 +178,12 @@ def update_html_file(news_data, week_info):
 
     # 2. 更新 SECTIONS
     static_props = {
-        'global': {'subtitle': '全球视野', 'bgColor': 'bg-[#FF4D00]', 'textColor': 'text-white'},
-        'education': {'subtitle': '教育观察', 'bgColor': 'bg-[#CCFF00]', 'textColor': 'text-black'},
-        'university': {'subtitle': '院校动态', 'bgColor': 'bg-[#0047FF]', 'textColor': 'text-white'},
-        'design': {'subtitle': '前沿设计', 'bgColor': 'bg-[#FF00FF]', 'textColor': 'text-white'},
-        'summer': {'subtitle': '夏校科研', 'bgColor': 'bg-[#00FF94]', 'textColor': 'text-black'},
-        'competitions': {'subtitle': '竞赛信息', 'bgColor': 'bg-[#1A1A1A]', 'textColor': 'text-white'}
+        'global': {'subtitle': '政策风向与大事件', 'bgColor': 'bg-[#FF4D00]', 'textColor': 'text-white'},
+        'education': {'subtitle': '留学趋势与学费变动', 'bgColor': 'bg-[#CCFF00]', 'textColor': 'text-black'},
+        'university': {'subtitle': '招生简章与截止日', 'bgColor': 'bg-[#0047FF]', 'textColor': 'text-white'},
+        'design': {'subtitle': '黑科技与设计风口', 'bgColor': 'bg-[#FF00FF]', 'textColor': 'text-white'},
+        'summer': {'subtitle': '背景提升机会', 'bgColor': 'bg-[#00FF94]', 'textColor': 'text-black'},
+        'competitions': {'subtitle': '高含金量赛事', 'bgColor': 'bg-[#1A1A1A]', 'textColor': 'text-white'}
     }
     
     titles = {
@@ -205,12 +227,6 @@ def update_html_file(news_data, week_info):
             tags = item.get('tags', [])
             tags_str = json.dumps(tags, ensure_ascii=False) if isinstance(tags, list) else "[]"
             
-            majors = item.get('relevant_majors', [])
-            majors_str = json.dumps(majors, ensure_ascii=False) if isinstance(majors, list) else "[]"
-
-            kps = item.get('key_points', [])
-            kps_str = json.dumps(kps, ensure_ascii=False) if isinstance(kps, list) else "[]"
-            
             js_sections_str += "                    {\n"
             js_sections_str += f"                        id: {current_id},\n"
             js_sections_str += f"                        title: \"{clean_title}\",\n"
@@ -219,8 +235,6 @@ def update_html_file(news_data, week_info):
             js_sections_str += f"                        date: \"{clean_date}\",\n"
             js_sections_str += f"                        image: \"{clean_image}\",\n"
             js_sections_str += f"                        tags: {tags_str},\n"
-            js_sections_str += f"                        relevant_majors: {majors_str},\n"
-            js_sections_str += f"                        key_points: {kps_str},\n"
             js_sections_str += f"                        url: \"{clean_url}\",\n"
             js_sections_str += f"                        fullContent: \"{clean_content}\",\n"
             js_sections_str += f"                        analysis: \"{clean_analysis}\"\n"
