@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import datetime
 from google import genai
@@ -18,27 +19,46 @@ def get_current_week_info():
         "year": str(year)
     }
 
-def generate_news_content():
-    """调用 Gemini API 生成新闻数据"""
-    if not API_KEY:
-        raise ValueError("❌ 错误: 未找到 GEMINI_API_KEY 环境变量。")
+def extract_json_from_text(text):
+    """尝试从混合文本中提取 JSON 列表"""
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
 
-    print(f"🚀 正在连接 Gemini API (key length: {len(API_KEY)})...")
+    try:
+        # 提取 ```json ... ```
+        match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', text)
+        if match:
+            return json.loads(match.group(1))
+        
+        # 提取 [ ... ]
+        start = text.find('[')
+        end = text.rfind(']')
+        if start != -1 and end != -1:
+            json_str = text[start:end+1]
+            return json.loads(json_str)
+            
+    except Exception as e:
+        print(f"JSON 提取失败: {e}")
     
-    # 初始化客户端
+    return None
+
+def generate_news_content():
+    """调用 Gemini API 生成新闻数据 (使用新版 SDK)"""
+    if not API_KEY:
+        raise ValueError("❌ 错误: 未找到 GEMINI_API_KEY。请在 GitHub Secrets 中配置。")
+
+    print(f"🚀 正在连接 Gemini API (新版 SDK)...")
+    
+    # 关键修改：使用新版 SDK 客户端
     client = genai.Client(api_key=API_KEY)
 
-    # 核心 Prompt
     prompt = f"""
-    你是一名严格遵守事实核查与信息溯源规范的国际教育与全球资讯编辑。
+    你是一名专业、犀利、有深度的国际教育与设计艺术资讯主编。
     现在是 {datetime.date.today().strftime("%Y年%m月%d日")}。
 
     请检索【最近 7 天内首次发布】的信息，并按要求生成《RAC 周末闪讯》的内容。
-
-    【信息来源要求】
-    仅限：微博/公众号（高校/权威媒体）、权威新闻媒体（BBC/Reuters/FT/NYTimes等）、海外大学官方社媒。
-    【明确排除】
-    任何教培中介商业推广（新东方/启德等）、观点评论、未经证实信息。
 
     【内容主题范围】
     请围绕以下六类资讯进行筛选与整理（**每个板块必须包含 5 条资讯，总共 30 条**）：
@@ -49,39 +69,31 @@ def generate_news_content():
     5. summer (Summer School / 暑期科研项目信息)
     6. competitions (截止时间在未来的国际权威竞赛)
 
-    【JSON 输出格式要求】
-    请直接输出以下 JSON 结构：
-    [
-        {{
-            "id": "global",
-            "items": [
-                {{
-                    "title": "标题 (Emoji + 中文)", 
-                    "content": "**关键词**：两行摘要...", 
-                    "source": "发布方", 
-                    "date": "MM.DD", 
-                    "image": "https://...",
-                    "tags": ["Tag1", "Tag2"],
-                    "relevant_majors": ["Interaction Design", "HCI"],
-                    "key_points": ["核心点1", "核心点2", "核心点3"],
-                    "url": "https://... (必须是真实链接)",
-                    "fullContent": "<h3>小标题</h3><p>详细内容(400-600字)...</p>",
-                    "analysis": "专家点评(2句话)..."
-                }}
-            ]
-        }}
-    ]
+    【深度内容生成要求】
+    不要只写简介！**每条新闻必须是一篇 400-600 字的深度微报道。**
+    
+    1.  **key_points**: 提炼 3 个核心情报（Bullet points）。
+    2.  **relevant_majors**: 列出受此新闻影响的具体设计/艺术专业名称（英文）。
+    3.  **fullContent**: 
+        * 必须包含 HTML 标签（`<h3>` 小标题, `<p>` 段落, `<ul>` 列表）。
+        * 内容必须详实，包含数据支持、背景分析和未来预测。
+    4.  **analysis**: 针对学生/家长的犀利点评（2句话），直击痛点，给出行动建议。
+    5.  **url**: 必须是真实的原始新闻链接，不能留空。
+    6.  **image**: 必须提供一张相关图片的 URL (og:image)。
+
+    【格式要求】
+    请直接输出 JSON 数组，无需 Markdown 标记。
     """
 
-    print("🔍 正在调用 Gemini API (Model: gemini-2.0-flash-exp)...")
+    print("🔍 正在调用 Gemini API 进行深度内容生成... (Target: 30 items)")
     
     try:
-        # 使用纯字典配置，这是最兼容的方式
+        # 关键修改：使用新版 SDK 的调用方式
         response = client.models.generate_content(
             model='gemini-2.0-flash-exp',
             contents=prompt,
             config={
-                'tools': [{'google_search': {}}], # 启用搜索
+                'tools': [{'google_search': {}}], # 新版 SDK 的搜索工具配置
                 'response_mime_type': 'application/json' # 强制 JSON 模式
             }
         )
@@ -91,14 +103,15 @@ def generate_news_content():
 
     print("✅ API 响应成功，正在解析 JSON...")
     
-    try:
-        # JSON Mode 下，response.text 应该直接是合法的 JSON 字符串
-        news_data = json.loads(response.text)
-        return news_data
-    except json.JSONDecodeError:
-        print("❌ 错误: 无法解析 AI 返回的 JSON。")
-        print(f"原始响应: {response.text[:500]}...")
-        raise
+    # 新版 SDK 直接从 response.text 获取内容
+    news_data = extract_json_from_text(response.text)
+    
+    if not news_data:
+        print("❌ 错误: 无法从 AI 响应中提取有效的 JSON 数据。")
+        print(f"原始响应片段: {response.text[:500]}")
+        raise ValueError("Invalid JSON response from AI")
+        
+    return news_data
 
 def update_html_file(news_data, week_info):
     """读取 index.html 并更新 JS 数据部分"""
@@ -116,11 +129,7 @@ def update_html_file(news_data, week_info):
             year: "{week_info['year']}"
         }};"""
     
-    content = re.sub(
-        r'const\s+ISSUE_CONFIG\s*=\s*\{[\s\S]*?\};', 
-        new_config_str, 
-        content
-    )
+    content = re.sub(r'const\s+ISSUE_CONFIG\s*=\s*\{[\s\S]*?\};', new_config_str, content)
 
     # 2. 更新 SECTIONS
     static_props = {
@@ -139,16 +148,22 @@ def update_html_file(news_data, week_info):
     }
 
     js_sections_str = "const SECTIONS = [\n"
-    
     global_id_counter = 1
 
-    for section_data in news_data:
-        sec_id = section_data['id']
-        props = static_props.get(sec_id, {})
-        display_title = titles.get(sec_id, sec_id.upper())
+    # 处理 AI 返回的数据（兼容列表或字典结构）
+    data_list = news_data if isinstance(news_data, list) else []
+    
+    # 建立 ID 到数据的映射，防止 AI 返回顺序错乱
+    data_map = {item['id']: item for item in data_list if 'id' in item}
+
+    # 按照我们预定义的顺序遍历板块
+    for sec_key in ['global', 'education', 'university', 'design', 'summer', 'competitions']:
+        section_data = data_map.get(sec_key, {'items': []})
+        props = static_props.get(sec_key, {})
+        display_title = titles.get(sec_key, sec_key.upper())
         
         js_sections_str += "            {\n"
-        js_sections_str += f"                id: '{sec_id}',\n"
+        js_sections_str += f"                id: '{sec_key}',\n"
         js_sections_str += f"                title: '{display_title}',\n"
         js_sections_str += f"                subtitle: '{props.get('subtitle', '')}',\n"
         js_sections_str += f"                bgColor: '{props.get('bgColor', '')}',\n"
@@ -198,11 +213,7 @@ def update_html_file(news_data, week_info):
 
     js_sections_str += "        ];"
 
-    content = re.sub(
-        r'const\s+SECTIONS\s*=\s*\[([\s\S]*?)\];', 
-        js_sections_str, 
-        content
-    )
+    content = re.sub(r'const\s+SECTIONS\s*=\s*\[([\s\S]*?)\];', js_sections_str, content)
 
     with open(HTML_FILE_PATH, 'w', encoding='utf-8') as f:
         f.write(content)
@@ -214,10 +225,8 @@ if __name__ == "__main__":
         print("🎬 开始执行周更任务...")
         week_info = get_current_week_info()
         print(f"📅 目标版本: {week_info['vol']} ({week_info['date']})")
-        
         news_data = generate_news_content()
         update_html_file(news_data, week_info)
-        
         print("🎉 所有任务完成。")
     except Exception as e:
         print(f"❌ 任务失败: {e}")
