@@ -25,7 +25,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install google-generativeai
+          # 关键修改：安装新版 google-genai SDK
+          pip install google-genai
 
       - name: Generate News Content
         env:
