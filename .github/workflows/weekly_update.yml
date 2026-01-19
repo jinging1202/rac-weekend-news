@@ -25,7 +25,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # 关键修改：安装新版 google-genai SDK
+          # 必须安装 Google 官方最新的 GenAI SDK
           pip install google-genai
 
       - name: Generate News Content
@@ -38,8 +38,8 @@ jobs:
           git config --global user.name "RAC-Bot"
           git config --global user.email "bot@racstudio.cn"
           
+          # 只有当 index.html 真的被修改时才提交，避免空提交报错
           git add index.html
-          
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
