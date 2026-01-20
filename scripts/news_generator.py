@@ -2,13 +2,15 @@ import os
 import re
 import json
 import datetime
-import time  # 新增 time 模块用于等待
-from google import genai
+import time
+import google.generativeai as genai
 
 # ================= 配置区 =================
 # 从 GitHub Secrets 获取 API Key
 API_KEY = os.environ.get("GEMINI_API_KEY")
 HTML_FILE_PATH = "index.html"
+# 使用支持搜索功能的最新模型
+MODEL_NAME = 'gemini-2.0-flash' 
 
 def get_current_week_info():
     """获取当前的日期、年份和周数"""
@@ -23,50 +25,57 @@ def get_current_week_info():
     }
 
 def extract_json_from_text(text):
-    """尝试从混合文本中提取 JSON 列表"""
+    """尝试从 AI 返回的文本中稳健提取 JSON"""
     try:
-        # 1. 尝试直接解析
         return json.loads(text)
     except json.JSONDecodeError:
         pass
-
+    
+    # 尝试匹配 markdown 代码块
     try:
-        # 2. 尝试提取 Markdown 代码块 ```json ... ```
         match = re.search(r'```json\s*(\[[\s\S]*?\])\s*```', text)
         if match:
             return json.loads(match.group(1))
-        
-        # 3. 尝试寻找最外层的方括号 []
+        # 尝试直接寻找数组括号
         start = text.find('[')
         end = text.rfind(']')
         if start != -1 and end != -1:
-            json_str = text[start:end+1]
-            return json.loads(json_str)
-            
-    except Exception as e:
-        print(f"JSON 提取失败: {e}")
-    
+            return json.loads(text[start:end+1])
+    except Exception:
+        pass
     return None
 
 def generate_news_content():
-    """调用 Gemini API 生成新闻数据 (带重试机制)"""
+    """调用 Gemini API 生成新闻数据"""
     if not API_KEY:
-        raise ValueError("❌ 错误: 未找到 GEMINI_API_KEY 环境变量。请在 GitHub Secrets 或本地环境变量中配置。")
+        raise ValueError("❌ 错误: 未找到 GEMINI_API_KEY 环境变量。请在 GitHub Secrets 中配置。")
 
-    print(f"🚀 正在连接 Gemini API (key length: {len(API_KEY)})...")
+    print(f"正在初始化 Google GenAI Client...")
+    genai.configure(api_key=API_KEY)
+    model = genai.GenerativeModel(MODEL_NAME)
     
-    # 初始化客户端
-    client = genai.Client(api_key=API_KEY)
-
-    # 核心 Prompt
+    # 核心 Prompt - 严格植入用户的编辑指令 (30条规则)
     prompt = f"""
-    你是一名专业、犀利、有深度的国际教育与设计艺术资讯主编。
+    你是一名严格遵守事实核查与信息溯源规范的国际教育与全球资讯编辑。
     现在是 {datetime.date.today().strftime("%Y年%m月%d日")}。
 
-    请检索【最近 7 天内首次发布】的信息，并按要求生成《RAC 周末闪讯》的内容。
+    请你完成以下任务，并【只输出最终资讯内容本身】。为了让程序能够处理，**请务必将结果封装为 JSON 格式**（具体格式见下方）。
+
+    【时间范围】
+    仅检索并整理【最近 7 天内首次发布】的信息。
+
+    【信息来源要求】
+    仅限以下来源：
+    - 微博、微信公众号（高校 / 权威媒体官方账号）
+    - 国内外权威新闻媒体官方账号（如 BBC / Reuters / FT / NYTimes 等）
+    - 海外大学官方 网站/Instagram / X(Twitter) / Facebook 账号
+
+    【明确排除】
+    - 任何教培、留学中介、商业推广内容（如新东方、启德、IDP 等）
+    - 二次转载、观点评论、未经证实的信息
 
     【内容主题范围】
-    请围绕以下六类资讯进行筛选与整理（**每个板块必须包含 5 条资讯，总共 30 条**）：
+    请围绕以下六类资讯进行筛选与整理（**每个板块必须包含 5 条资讯，总计 30 条**）：
     1. global (社会热点 / 国际新闻)
     2. education (海内外热点教育类新闻)
     3. university (世界顶尖院校官方动态)
@@ -74,76 +83,63 @@ def generate_news_content():
     5. summer (Summer School / 暑期科研项目信息)
     6. competitions (截止时间在未来的国际权威竞赛)
 
-    【深度内容生成要求】
-    不要只写简介！**每条新闻必须是一篇 400-600 字的深度微报道。**
-    
-    1.  **key_points**: 提炼 3 个核心情报（Bullet points）。
-    2.  **relevant_majors**: 列出受此新闻影响的具体设计/艺术专业名称（英文）。
-    3.  **fullContent**: 
-        * 必须包含 HTML 标签（`<h3>` 小标题, `<p>` 段落, `<ul>` 列表）。
-        * 内容必须详实，包含数据支持、背景分析和未来预测。
-    4.  **analysis**: 针对学生/家长的犀利点评（2句话），直击痛点，给出行动建议。
-    5.  **url**: 必须是真实的原始新闻链接，不能留空。
-    6.  **image**: 必须提供一张相关图片的 URL (og:image)。
+    【筛选与排序规则】
+    - 总数：严格保留 30 条。
+    - 编号：所有资讯的 ID 必须在整个列表中连续递增。
 
-    【格式要求】
-    请直接输出 JSON 数组，无需 Markdown 标记。
+    【格式要求转换】
+    请将你作为编辑整理好的内容映射到以下 JSON 结构中。
+    
+    **关键字段要求：**
+    1. `url`: **必须是真实的、可访问的原始新闻链接（以 http 开头），绝对不能留空或使用模拟链接。**
+    2. `image`: 请尝试寻找每条新闻的相关图片 URL 填入 image 字段（如 og:image）。
+    3. `analysis`: 针对该新闻，写一段简短犀利的“专家点评”（2句话），针对学生/家长，分析其对申请或未来的影响。
+    4. `content`: **关键词 / 关键词**：两行文字概述事件核心信息。
+
+    JSON 输出示例：
+    [
+        {{
+            "id": "global",
+            "items": [
+                {{
+                    "title": "关键词 (Emoji + 中文)", 
+                    "content": "**关键词 / 关键词**：两行文字概述事件核心信息。", 
+                    "source": "发布方", 
+                    "date": "MM.DD", 
+                    "image": "https://example.com/news-image.jpg",
+                    "tags": ["Tag1", "Tag2"],
+                    "url": "https://www.bbc.com/news/example-story",
+                    "fullContent": "<p>这里写一段详细报道（约150字），支持HTML标签。</p>",
+                    "analysis": "这里写专家点评..."
+                }}
+            ]
+        }},
+        ... 其他板块
+    ]
     """
 
-    print("🔍 正在调用 Gemini API 进行深度内容生成... (Target: 30 items)")
+    print("正在调用 Gemini API 进行严格筛选与生成... (Target: 30 items)")
     
-    # --- 重试逻辑开始 ---
-    max_retries = 5  # 最大重试次数
-    base_delay = 10  # 基础等待时间（秒）
-    response = None
-
-    for attempt in range(max_retries):
-        try:
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-exp',
-                contents=prompt,
-                config={
-                    'tools': [{'google_search': {}}],
-                    'response_mime_type': 'application/json'
-                }
-            )
-            # 如果成功，跳出循环
-            break
-        except Exception as e:
-            error_msg = str(e).lower()
-            # 检查是否为配额不足 (429) 或资源耗尽错误
-            if "quota" in error_msg or "429" in error_msg or "resource_exhausted" in error_msg:
-                if attempt < max_retries - 1:
-                    wait_time = base_delay * (2 ** attempt) # 指数退避: 10s, 20s, 40s, 80s...
-                    print(f"⚠️ API 配额不足 (Attempt {attempt + 1}/{max_retries}). 等待 {wait_time} 秒后重试...")
-                    time.sleep(wait_time)
-                else:
-                    print(f"❌ API 重试次数耗尽: {e}")
-                    raise
-            else:
-                # 如果是其他错误（如参数错误），直接抛出
-                print(f"❌ API 调用发生非配额错误: {e}")
-                raise
-    # --- 重试逻辑结束 ---
-
-    if not response:
-        raise ValueError("❌ 未能获取有效的 API 响应")
-
-    print("✅ API 响应成功，正在解析 JSON...")
+    # 配置 Google Search 工具
+    tools = [{'google_search': {}}]
+    
+    response = model.generate_content(
+        prompt, 
+        tools=tools,
+        generation_config={'response_mime_type': 'application/json'}
+    )
     
     news_data = extract_json_from_text(response.text)
-    
     if not news_data:
-        print("❌ 错误: 无法从 AI 响应中提取有效的 JSON 数据。")
-        print(f"原始响应片段: {response.text[:500]}")
-        raise ValueError("Invalid JSON response from AI")
-        
+        print("Raw Output:", response.text)
+        raise ValueError("Error: AI 返回的数据无法解析为 JSON。")
+    
     return news_data
 
 def update_html_file(news_data, week_info):
     """读取 index.html 并更新 JS 数据部分"""
     if not os.path.exists(HTML_FILE_PATH):
-        raise FileNotFoundError(f"❌ 未找到 {HTML_FILE_PATH} 文件，请确保脚本在项目根目录下运行。")
+        raise FileNotFoundError(f"未找到 {HTML_FILE_PATH} 文件")
 
     with open(HTML_FILE_PATH, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -157,21 +153,23 @@ def update_html_file(news_data, week_info):
         }};"""
     
     content = re.sub(
-        r'const\s+ISSUE_CONFIG\s*=\s*\{[\s\S]*?\};', 
+        r'const ISSUE_CONFIG = \{[\s\S]*?\};', 
         new_config_str, 
         content
     )
 
     # 2. 更新 SECTIONS
+    # 静态属性映射 (确保颜色和图标正确)
     static_props = {
-        'global': {'subtitle': '全球视野', 'bgColor': 'bg-[#FF4D00]', 'textColor': 'text-white'},
-        'education': {'subtitle': '教育观察', 'bgColor': 'bg-[#CCFF00]', 'textColor': 'text-black'},
-        'university': {'subtitle': '院校动态', 'bgColor': 'bg-[#0047FF]', 'textColor': 'text-white'},
-        'design': {'subtitle': '前沿设计', 'bgColor': 'bg-[#FF00FF]', 'textColor': 'text-white'},
-        'summer': {'subtitle': '夏校科研', 'bgColor': 'bg-[#00FF94]', 'textColor': 'text-black'},
-        'competitions': {'subtitle': '竞赛信息', 'bgColor': 'bg-[#1A1A1A]', 'textColor': 'text-white'}
+        'global': {'subtitle': '全球视野 / VISION', 'bgColor': 'bg-[#FF4D00]', 'textColor': 'text-white'},
+        'education': {'subtitle': '教育观察 / INSIGHT', 'bgColor': 'bg-[#CCFF00]', 'textColor': 'text-black'},
+        'university': {'subtitle': '院校动态 / UPDATE', 'bgColor': 'bg-[#0047FF]', 'textColor': 'text-white'},
+        'design': {'subtitle': '前沿设计 / FUTURE', 'bgColor': 'bg-[#FF00FF]', 'textColor': 'text-white'},
+        'summer': {'subtitle': '夏校科研 / LABS', 'bgColor': 'bg-[#00FF94]', 'textColor': 'text-black'},
+        'competitions': {'subtitle': '竞赛信息 / TROPHY', 'bgColor': 'bg-[#1A1A1A]', 'textColor': 'text-white'}
     }
-    
+
+    # 标题映射
     titles = {
         'global': 'GLOBAL NEWS', 'education': 'EDUCATION',
         'university': 'UNIVERSITY', 'design': 'TECH & DESIGN',
@@ -180,49 +178,48 @@ def update_html_file(news_data, week_info):
 
     js_sections_str = "const SECTIONS = [\n"
     
+    # 【核心逻辑】：强制连续 ID 生成器 (1-30)
+    # 不依赖 AI 返回的 ID，而是由代码强制分配，确保前端显示正确
     global_id_counter = 1
 
-    # 数据容错处理：确保 news_data 是列表
-    data_list = news_data if isinstance(news_data, list) else []
-    data_map = {item.get('id'): item for item in data_list if isinstance(item, dict) and 'id' in item}
-
+    # 将 news_data 转换为字典方便查找
+    data_dict = {item['id']: item for item in news_data if 'id' in item}
+    
     # 按固定顺序遍历板块
-    for sec_key in ['global', 'education', 'university', 'design', 'summer', 'competitions']:
-        # 获取对应板块数据，如果不存在则为空
-        section_data = data_map.get(sec_key, {'items': []})
-        props = static_props.get(sec_key, {})
-        display_title = titles.get(sec_key, sec_key.upper())
+    section_order = ['global', 'education', 'university', 'design', 'summer', 'competitions']
+
+    for sec_id in section_order:
+        props = static_props.get(sec_id, {})
+        # 获取该板块的 AI 数据，如果没有则为空列表
+        sec_data = data_dict.get(sec_id, {'items': []})
         
         js_sections_str += "            {\n"
-        js_sections_str += f"                id: '{sec_key}',\n"
-        js_sections_str += f"                title: '{display_title}',\n"
+        js_sections_str += f"                id: '{sec_id}',\n"
+        js_sections_str += f"                title: '{titles.get(sec_id, sec_id.upper())}',\n"
         js_sections_str += f"                subtitle: '{props.get('subtitle', '')}',\n"
         js_sections_str += f"                bgColor: '{props.get('bgColor', '')}',\n"
         js_sections_str += f"                textColor: '{props.get('textColor', '')}',\n"
         js_sections_str += "                items: [\n"
         
-        items = section_data.get('items', [])
-        for item in items:
+        for item in sec_data.get('items', []):
             current_id = global_id_counter
             global_id_counter += 1
 
-            clean_content = str(item.get('fullContent', '')).replace('\n', '').replace('"', '\\"').replace("'", "\\'")
-            clean_summary = str(item.get('content', '')).replace('"', '\\"').replace("'", "\\'")
-            clean_title = str(item.get('title', '')).replace('"', '\\"').replace("'", "\\'")
-            clean_image = str(item.get('image', '')).replace('"', '\\"')
-            clean_analysis = str(item.get('analysis', '')).replace('"', '\\"').replace("'", "\\'")
-            clean_source = str(item.get('source', 'RAC News'))
-            clean_date = str(item.get('date', ''))
-            clean_url = str(item.get('url', '#'))
+            # 清理字符串转义，防止 JS 语法错误
+            clean = lambda s: str(s).replace('\n', '').replace('"', '\\"').replace("'", "\\'")
             
+            clean_title = clean(item.get('title', ''))
+            clean_summary = clean(item.get('content', ''))
+            clean_source = clean(item.get('source', 'RAC News'))
+            clean_date = clean(item.get('date', ''))
+            clean_image = clean(item.get('image', ''))
+            clean_url = clean(item.get('url', '#'))
+            clean_full = clean(item.get('fullContent', ''))
+            clean_analysis = clean(item.get('analysis', ''))
+            
+            # 处理 tags 列表
             tags = item.get('tags', [])
             tags_str = json.dumps(tags, ensure_ascii=False) if isinstance(tags, list) else "[]"
-            
-            majors = item.get('relevant_majors', [])
-            majors_str = json.dumps(majors, ensure_ascii=False) if isinstance(majors, list) else "[]"
-
-            kps = item.get('key_points', [])
-            kps_str = json.dumps(kps, ensure_ascii=False) if isinstance(kps, list) else "[]"
             
             js_sections_str += "                    {\n"
             js_sections_str += f"                        id: {current_id},\n"
@@ -232,10 +229,8 @@ def update_html_file(news_data, week_info):
             js_sections_str += f"                        date: \"{clean_date}\",\n"
             js_sections_str += f"                        image: \"{clean_image}\",\n"
             js_sections_str += f"                        tags: {tags_str},\n"
-            js_sections_str += f"                        relevant_majors: {majors_str},\n"
-            js_sections_str += f"                        key_points: {kps_str},\n"
             js_sections_str += f"                        url: \"{clean_url}\",\n"
-            js_sections_str += f"                        fullContent: \"{clean_content}\",\n"
+            js_sections_str += f"                        fullContent: \"{clean_full}\",\n"
             js_sections_str += f"                        analysis: \"{clean_analysis}\"\n"
             js_sections_str += "                    },\n"
         
@@ -245,7 +240,7 @@ def update_html_file(news_data, week_info):
     js_sections_str += "        ];"
 
     content = re.sub(
-        r'const\s+SECTIONS\s*=\s*\[([\s\S]*?)\];', 
+        r'const SECTIONS = \[([\s\S]*?)\];', 
         js_sections_str, 
         content
     )
@@ -253,18 +248,18 @@ def update_html_file(news_data, week_info):
     with open(HTML_FILE_PATH, 'w', encoding='utf-8') as f:
         f.write(content)
     
-    print(f"✅ 成功更新 {HTML_FILE_PATH}！版本: {week_info['vol']} ({week_info['date']})")
+    print(f"✅ 成功更新 {HTML_FILE_PATH}！版本: {week_info['vol']}")
 
 if __name__ == "__main__":
     try:
-        print("🎬 开始执行周更任务...")
+        print("开始执行周更任务...")
         week_info = get_current_week_info()
-        print(f"📅 目标版本: {week_info['vol']} ({week_info['date']})")
+        print(f"目标版本: {week_info['vol']} ({week_info['date']})")
         
         news_data = generate_news_content()
         update_html_file(news_data, week_info)
         
-        print("🎉 所有任务完成。")
+        print("所有任务完成。")
     except Exception as e:
         print(f"❌ 任务失败: {e}")
         exit(1)
