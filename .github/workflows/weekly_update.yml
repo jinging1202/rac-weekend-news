@@ -1,12 +1,13 @@
 name: Weekly News Auto Update
 
 on:
+  # 定时触发：每周六 UTC 04:00 (北京时间 12:00)
   schedule:
-    # Cron 表达式：每周六 UTC 04:00 (即北京时间 12:00)
     - cron: '0 4 * * 6'
-  # 允许手动点击 "Run workflow" 按钮触发 (方便测试)
+  # 手动触发：允许在 GitHub Actions 页面点击按钮运行 (方便测试)
   workflow_dispatch:
 
+# 赋予 CI 机器人修改代码仓库的权限
 permissions:
   contents: write
 
@@ -25,11 +26,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # 必须安装 Google 官方最新的 GenAI SDK
-          pip install google-genai
+          pip install google-generativeai
 
       - name: Generate News Content
         env:
+          # 必须在 GitHub 仓库的 Settings -> Secrets -> Actions 中配置此 Key
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python scripts/news_generator.py
 
@@ -38,8 +39,10 @@ jobs:
           git config --global user.name "RAC-Bot"
           git config --global user.email "bot@racstudio.cn"
           
-          # 只有当 index.html 真的被修改时才提交，避免空提交报错
+          # 添加修改后的 index.html
           git add index.html
+          
+          # 只有当文件确实发生变化时才提交，避免空提交报错
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
