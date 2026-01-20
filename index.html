@@ -5,132 +5,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>RAC 周末闪讯 | Global Design News</title>
     
+    <!-- 1. 样式库：Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. 截图库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- 3. 核心库 -->
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
     
     <style>
-        /* 新丑风核心视觉 */
+        /* 新丑风核心字体设置 */
         body { 
-            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
-            background-color: #F2F2F2;
+            font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background-color: #f0f0f0;
             background-image: radial-gradient(#000 1px, transparent 1px);
             background-size: 20px 20px;
-            color: #000;
         }
-        .font-display { font-family: 'Impact', 'Arial Black', sans-serif; letter-spacing: 0.02em; }
-        .font-mono { font-family: 'Space Mono', 'Courier New', monospace; letter-spacing: -0.05em; }
+        .font-mono { font-family: "Courier New", Courier, monospace; }
         
+        /* 隐藏滚动条 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
+        /* 动画定义 */
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .animate-marquee { display: flex; animation: marquee 20s linear infinite; }
+        .animate-marquee { display: flex; animation: marquee 10s linear infinite; }
         
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
+        /* 硬核阴影工具类 */
         .shadow-hard { box-shadow: 4px 4px 0px 0px #000; }
         .shadow-hard-sm { box-shadow: 2px 2px 0px 0px #000; }
+        .shadow-hard-lg { box-shadow: 8px 8px 0px 0px #000; }
         
+        /* 截图模式样式 */
         .capturing .hide-on-capture { display: none !important; }
-        .capturing { width: 420px !important; max-width: 420px !important; height: auto !important; overflow: visible !important; border: none !important; margin: 0 !important; }
+        .capturing { width: 420px !important; max-width: 420px !important; height: auto !important; overflow: visible !important; border: none !important; box-shadow: none !important; }
 
-        /* --- 深度阅读排版 --- */
-        .article-content { font-size: 1.05rem; line-height: 1.8; color: #111; }
-        .article-content p { margin-bottom: 1.5rem; text-align: justify; }
-        /* 自动生成的二级标题样式 */
-        .article-content h3 { 
-            font-weight: 900; font-size: 1.25rem; margin-top: 2.5rem; margin-bottom: 1rem; 
-            display: flex; align-items: center; gap: 0.5rem;
-        }
-        .article-content h3::before { content: ''; display: inline-block; width: 8px; height: 8px; background: #0047FF; border: 1px solid black; }
-        .article-content strong { background: linear-gradient(180deg, transparent 60%, #CCFF00 60%); font-weight: 700; padding: 0 2px; }
-        .article-content ul { list-style: none; padding-left: 0; margin-bottom: 1.5rem; border-left: 2px solid #000; padding-left: 1rem; margin-left: 0.5rem; }
-        .article-content li { margin-bottom: 0.8rem; position: relative; padding-left: 1rem; }
-        .article-content li::before { content: '>'; position: absolute; left: -5px; font-weight: 900; color: #0047FF; }
-        
-        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.1); }
+        /* 详情页排版 */
+        .article-content p { margin-bottom: 1.2rem; line-height: 1.7; text-align: justify; font-size: 0.95rem; color: #1a1a1a; }
+        .article-content h4 { font-weight: 900; font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.8rem; background: #CCFF00; display: inline-block; padding: 2px 8px; border: 2px solid #000; box-shadow: 2px 2px 0px 0px #000; transform: rotate(-1deg); }
+        .article-content ul { list-style: square; padding-left: 1.2rem; margin-bottom: 1.5rem; font-family: "Courier New", monospace; font-size: 0.9rem; }
+        .article-content li { margin-bottom: 0.5rem; }
     </style>
 </head>
 <body class="bg-[#E0E0E0] min-h-screen flex justify-center selection:bg-[#CCFF00] selection:text-black">
-    <div id="root" class="w-full max-w-[420px] min-h-screen bg-white border-x-0 sm:border-x-[3px] border-black relative shadow-2xl"></div>
+    <div id="root" class="w-full max-w-[420px] min-h-screen bg-white border-x-0 sm:border-x-[3px] border-black relative"></div>
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
         
+        // =================================================================
+        // 👇👇👇【每周更新区】 (自动化脚本会自动覆盖这里的数据) 👇👇👇
+        // =================================================================
+
         const ISSUE_CONFIG = {
             vol: "VOL.03",           
             week: "WEEK 03",         
-            date: "JAN. 18",      
+            date: "2026.01.18",      
             year: "2026"
         };
 
         const apiKey = ""; 
 
-        // 模拟数据：内容大幅扩充，增加 key_points 和 relevant_majors
+        // 模拟数据：ID 现已调整为全局连续 (1, 2, 3...)
         const SECTIONS = [
             {
                 id: 'global',
                 title: 'GLOBAL NEWS',
-                subtitle: '全球视野',
+                subtitle: '全球热点 / VISION',
                 bgColor: 'bg-[#FF4D00]',
                 textColor: 'text-white',
                 items: [
                     { 
                         id: 1, 
-                        title: "《疯狂动物城2》金球奖封神！动画叙事新巅峰", 
-                        content: "流媒体动画收视率创历史新高，CalArts 等名校录取风向标转变。", 
+                        title: "《疯狂动物城2》金球奖封神！动画电影迎来新巅峰", 
+                        content: "流媒体动画收视率创历史新高，艺术留学作品集选题大热方向。", 
                         source: "Golden Globes", 
                         date: "01.05", 
-                        image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop",
-                        tags: ["Animation", "Film"],
-                        relevant_majors: ["Character Animation", "Storyboarding", "Visual Development"],
-                        key_points: [
-                            "迪士尼打破续集魔咒，斩获最佳动画长片",
-                            "NPR渲染技术（非真实感渲染）成为行业主流",
-                            "流媒体叙事结构正在改变传统的电影剧本创作"
-                        ],
+                        image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop", 
+                        tags: ["ANIMATION", "FILM", "TRENDS"],
                         url: "https://goldenglobes.com/",
-                        fullContent: `
-                            <h3>🏆 现象级回归</h3>
-                            <p>第83届金球奖颁奖典礼上，迪士尼新作《疯狂动物城2》不负众望，一举斩获最佳动画长片大奖。这不仅是迪士尼在流媒体时代的一次重要反击，更标志着<strong>“社会派动画”</strong>（Socially Conscious Animation）在主流奖项中的地位日益稳固。</p>
-                            
-                            <h3>🎨 技术美学的新趋势</h3>
-                            <p>值得注意的是，影片中大量运用了 <strong>NPR (Non-Photorealistic Rendering)</strong> 技术，将手绘的质感与 3D 的体积感完美结合。这种“三渲二”的风格化尝试，正是近年来 CalArts、Ringling 以及 SVA 等顶尖动画院校在作品集中极力推崇的方向。</p>
-                            
-                            <h3>🎓 对申请的影响</h3>
-                            <p>对于准备 26Fall 的学生来说，这释放了一个明确信号：<strong>招生官不再单纯迷恋写实渲染技术</strong>。在你的作品集中，是否展现了独特的视觉语言？你的角色设计是否能服务于更深层的社会叙事？这才是拉开差距的关键。</p>
-                            
-                            <p>RAC 动画教研组建议：尝试在你的 Showreel 中加入一段 15-30 秒的风格化测试（Style Test），展示你对新技术的驾驭能力。</p>
-                        `,
-                        analysis: "这不仅仅是动画专业的狂欢。对于申请皇艺、伦艺的同学，请思考：如何用传统的叙事技巧，结合最新的渲染技术来讲好一个‘普世价值’的故事？招生官想看到的不是炫技，而是共情能力。"
+                        fullContent: `<p>第83届金球奖落幕，迪士尼新作再次证明了叙事的力量。对于申请生来说，这不仅是一个奖项，更是行业风向标。</p><h4>导师解读</h4><p>不要只看热闹。注意片中对光影技术的新尝试，这直接对应了 CalArts 和 Ringling 等名校对“技术与艺术结合”的考察重点。</p>`,
+                        analysis: "这不仅仅是动画专业的狂欢。对于申请皇艺、伦艺的同学，请思考：如何用传统的叙事技巧，结合最新的渲染技术（如NPR）来讲好一个‘普世价值’的故事？招生官想看到的不是炫技，而是共情能力。"
                     },
                     { 
                         id: 2, 
-                        title: "CES 2026：再见了屏幕？AI 投影交互爆发", 
-                        content: "无屏幕交互硬件成主流，交互设计专业迎来巨大课程改革。", 
+                        title: "CES 2026：再见了屏幕？AI 投影交互成未来主流", 
+                        content: "无屏幕交互硬件爆发，交互设计专业将迎来巨大课程改革。", 
                         source: "The Verge", 
                         date: "01.10", 
-                        tags: ["HCI", "Future"],
-                        relevant_majors: ["Interaction Design", "Service Design", "Creative Computing"],
-                        key_points: [
-                            "Humane Pin 迭代产品引爆全息投影交互",
-                            "手势控制 (Gesture) 精度提升 300%",
-                            "传统 UI 设计师面临职业转型危机"
-                        ],
+                        // image: "", // 故意留空测试自动占位图
+                        tags: ["HCI", "AI", "FUTURE"],
                         url: "https://www.theverge.com/ces",
-                        fullContent: `
-                            <h3>🚀 去屏幕化元年</h3>
-                            <p>CES 2026 最大的亮点无疑是“去屏幕化”趋势的全面爆发。从 Humane Pin 到 Apple Vision Air，硬件厂商正在合力消灭手机屏幕。全息投影和视网膜投影技术已进入民用量产阶段。</p>
-                            
-                            <h3>🧠 交互逻辑的重构</h3>
-                            <p>对于交互设计（HCI/IxD）专业的学生来说，这既是挑战也是机遇。传统的 <strong>GUI (图形用户界面)</strong> 设计逻辑将不再适用，取而代之的是基于 VUI (语音) 和 Gesture Control (手势) 的多模态交互系统。你需要思考：当没有屏幕时，用户如何获得反馈？</p>
-                            
-                            <h3>📂 作品集迭代方向</h3>
-                            <p>还在画 APP 界面？可能已经过时了。建议在作品集中增加至少一个<strong>“非屏幕交互”项目</strong>。例如：设计一套基于眼动追踪的智能家居控制系统，或者为盲人设计一套触觉反馈导航界面。</p>
-                        `,
+                        fullContent: `<p>CES 2026 展示了大量“去屏幕化”设备。Humane Pin 的迭代产品彻底引爆了全息投影交互的讨论。</p><h4>作品集策略</h4><p>还在画 App 界面？过时了。现在的作品集需要展示你对 VUI (语音交互) 和 Gesture Control (手势控制) 的理解。</p>`,
                         analysis: "屏幕时代的 UI 设计红利已尽。对于交互设计（IxD）和服务设计（SD）的同学，现在的机会在于‘隐形交互’。家长需要明白，孩子学的不是‘画图标’，而是设计人与机器沟通的逻辑。"
                     }
                 ]
@@ -138,7 +109,7 @@
             {
                 id: 'education',
                 title: 'EDUCATION',
-                subtitle: '教育观察',
+                subtitle: '教育观察 / INSIGHT',
                 bgColor: 'bg-[#CCFF00]',
                 textColor: 'text-black',
                 items: [
@@ -148,35 +119,53 @@
                         content: "伦敦地区生活成本预估增加15%，家长需提前做好资金储备。", 
                         source: "GOV.UK", 
                         date: "01.07", 
-                        tags: ["Policy", "UK"],
-                        relevant_majors: ["All Majors"],
-                        key_points: [
-                            "英国本科学费上限随通胀上调 5%",
-                            "伦敦地区房租中位数突破 £1200/周",
-                            "部分高校缩减国际生奖学金名额"
-                        ],
+                        image: "https://images.unsplash.com/photo-1526304640152-d4619684e484?q=80&w=1000&auto=format&fit=crop",
+                        tags: ["MONEY", "UK", "POLICY"],
                         url: "https://www.gov.uk/student-finance",
-                        fullContent: `
-                            <h3>💷 留学成本飙升</h3>
-                            <p>受持续通胀影响，英国教育部正式确认 2026/27 学年本科学费上限上调。与此同时，伦敦及周边地区的生活成本（Cost of Living）预计将比去年同期上涨约 15%。这对于预算紧张的家庭来说是一个严峻考验。</p>
-                            
-                            <h3>📉 应对策略</h3>
-                            <p>涨价不可逆，但策略可调整。我们建议：</p>
-                            <ul>
-                                <li><strong>关注非伦敦地区名校：</strong> 如格拉斯哥艺术学院 (GSA)、爱丁堡大学、拉夫堡大学。这些城市的房租仅为伦敦的 50%-60%，但学术排名依然顶尖。</li>
-                                <li><strong>尽早规划职业路径：</strong> 英国 PSW 签证政策依然有效。尽早利用学校 Career Center 资源寻找实习，通过兼职和未来的高薪工作来平衡留学成本。</li>
-                            </ul>
-                        `,
-                        analysis: "建议家长关注非伦敦地区的名校（如格拉斯哥、爱丁堡），性价比更高。同时，不仅要准备保证金，更要提前规划孩子的‘求职力’，尽早通过实习回本。"
+                        fullContent: `<p>通胀压力下，留英成本显著上升。这不仅影响学费，更直接体现在房租和日常开销上。</p>`,
+                        analysis: "涨价不可逆，但策略可调整。建议家长关注非伦敦地区的名校（如格拉斯哥、爱丁堡），性价比更高。同时，不仅要准备保证金，更要提前规划孩子的‘求职力’，尽早通过实习回本。"
+                     },
+                     {
+                        id: 4,
+                        title: "QS 2026亚洲排名：港大霸榜，新二所竞争白热化",
+                        content: "亚洲留学性价比持续走高，港大、国大、清华分列前三。",
+                        source: "QS Official",
+                        date: "01.06",
+                        image: "https://images.unsplash.com/photo-1590053123594-8703a43fa934?q=80&w=1000&auto=format&fit=crop",
+                        tags: ["RANKING", "ASIA", "TOP"],
+                        url: "https://www.topuniversities.com",
+                        fullContent: `<p>亚洲高等教育崛起已成定局。对于想兼顾排名和费用的家庭，新二所（NUS/NTU）和港三所是绝佳选择。</p>`,
+                        analysis: "不要带有‘亚洲不如欧美’的偏见。对于回国就业，QS 排名的权重依然很高。港新地区的硕士学制短、排名高，是典型的‘快准狠’高回报投资，适合目标明确的实用主义家庭。"
                      }
+                ]
+            },
+            {
+                id: 'design',
+                title: 'TECH & DESIGN',
+                subtitle: '前沿设计 / FUTURE',
+                bgColor: 'bg-[#FF00FF]',
+                textColor: 'text-white',
+                items: [
+                    {
+                        id: 5,
+                        title: "触觉反馈爆发：不仅能看，还能“摸”到虚拟世界",
+                        content: "多模态交互逻辑成为交互设计专业必备技能。",
+                        source: "TechCrunch",
+                        date: "01.09",
+                        image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop",
+                        tags: ["HAPTICS", "VR", "TECH"],
+                        url: "https://techcrunch.com",
+                        fullContent: `<p>触觉反馈背心和手套的民用化，标志着元宇宙体验完成了最后一块拼图。</p>`,
+                        analysis: "如果你还在纠结作品集的视觉风格，不妨换个赛道。‘多感官体验设计’（Multi-sensory Design）是目前的蓝海。尝试在项目中加入对触觉、听觉甚至嗅觉的思考，会让招生官眼前一亮。"
+                    }
                 ]
             }
         ];
 
         const CS_LINK = "https://work.weixin.qq.com/kfid/kfc3dbd2c4dc22c9e4f";
 
-        // --- Icons (Fixed) ---
-        const Icon = ({ name, size = 20, className = "" }) => {
+        // --- 图标组件 ---
+        const Icon = ({ name, size = 24, className = "" }) => {
             const icons = {
                 ArrowLeft: <><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></>,
                 ArrowUpRight: <><path d="M7 7h10v10"/><path d="M7 17 17 7"/></>,
@@ -189,10 +178,9 @@
                 X: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
                 MessageCircle: <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>,
                 Zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+                Eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
                 Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
-                Tag: <><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r="3"/></>,
-                Target: <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>,
-                Check: <polyline points="20 6 9 17 4 12"/>
+                Tag: <><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r="3"/></>
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -201,69 +189,97 @@
             );
         };
 
-        // --- Generative Art ---
+        // --- 生成式艺术组件 (Generative Art) ---
         const GenArtPlaceholder = ({ title, className }) => {
             const canvasRef = useRef(null);
+
             useEffect(() => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
+                
                 let seed = 0;
                 for (let i = 0; i < title.length; i++) seed = (seed + title.charCodeAt(i)) % 10000;
-                const random = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-                const colors = ['#0047FF', '#CCFF00', '#111111', '#E5E5E5'];
-                ctx.fillStyle = '#F2F2F2';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                const shapes = 3 + Math.floor(random() * 4);
-                ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-                ctx.lineWidth = 1;
-                for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
-                for(let i=0; i<canvas.height; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
-                for (let i = 0; i < shapes; i++) {
+                const random = () => {
+                    seed = (seed * 9301 + 49297) % 233280;
+                    return seed / 233280;
+                };
+
+                const colors = ['#CCFF00', '#FF00FF', '#0047FF', '#FF4D00', '#FFFFFF', '#000000'];
+                const bgColor = colors[Math.floor(random() * 4)];
+                
+                const w = canvas.width;
+                const h = canvas.height;
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, w, h);
+
+                const shapesCount = 3 + Math.floor(random() * 5);
+                for (let i = 0; i < shapesCount; i++) {
                     ctx.fillStyle = colors[Math.floor(random() * colors.length)];
-                    ctx.strokeStyle = '#111';
+                    ctx.strokeStyle = '#000000';
                     ctx.lineWidth = 3;
-                    const x = random() * canvas.width;
-                    const y = random() * canvas.height;
-                    const s = 50 + random() * 200;
-                    ctx.beginPath();
+                    
                     const type = Math.floor(random() * 3);
-                    if (type === 0) { ctx.arc(x, y, s/2, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
-                    else if (type === 1) { ctx.rect(x-s/2, y-s/2, s, s); ctx.fill(); ctx.stroke(); }
-                    else { ctx.moveTo(x, y-s/2); ctx.lineTo(x+s/2, y+s/2); ctx.lineTo(x-s/2, y+s/2); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+                    const x = random() * w;
+                    const y = random() * h;
+                    const size = 20 + random() * 80;
+
+                    ctx.beginPath();
+                    if (type === 0) { 
+                        ctx.arc(x, y, size/2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                    } else if (type === 1) { 
+                        ctx.rect(x - size/2, y - size/2, size, size);
+                        ctx.fill();
+                        ctx.stroke();
+                    } else { 
+                        ctx.beginPath();
+                        for(let j=0; j<5; j++) {
+                            ctx.moveTo(x - size/2, y - size/2 + j*10);
+                            ctx.lineTo(x + size/2, y - size/2 + j*10);
+                        }
+                        ctx.stroke();
+                    }
                 }
+
+                for (let i = 0; i < 500; i++) {
+                    ctx.fillStyle = Math.random() > 0.5 ? '#000' : '#fff';
+                    ctx.fillRect(random() * w, random() * h, 2, 2);
+                }
+
             }, [title]);
+
             return <canvas ref={canvasRef} width="600" height="400" className={className} />;
         };
 
         const Marquee = ({ text }) => (
-            <div className="bg-black text-white py-2 overflow-hidden border-y-2 border-black">
-                <div className="animate-marquee whitespace-nowrap">
-                    <span className="text-[10px] font-mono font-bold mx-8 tracking-[0.2em]">{text}</span>
-                    <span className="text-[10px] font-mono font-bold mx-8 tracking-[0.2em]">{text}</span>
+            <div className="bg-[#CCFF00] border-y-2 border-black py-2 overflow-hidden whitespace-nowrap relative z-20">
+                <div className="animate-marquee inline-block">
+                    <span className="text-sm font-black mx-4 font-mono">{text} /// {text} /// {text} /// {text}</span>
                 </div>
             </div>
         );
 
-        function Header() {
+        function Header({ onMenuClick }) {
             return (
-                <div className="bg-[#F2F2F2] text-black pt-4 pb-0 relative">
-                    <div className="px-5 pt-4 flex justify-between items-start mb-8">
-                        <div className="flex flex-col gap-1">
-                            <div className="text-4xl font-display font-black tracking-tighter leading-none">RAC</div>
-                            <div className="text-xs font-bold tracking-widest text-[#0047FF]">STUDIO</div>
+                <div className="bg-white text-black pt-4 pb-0 relative border-b-[3px] border-black">
+                    <div className="px-4 flex justify-between items-start mb-4">
+                        <div className="border-2 border-black bg-black text-white px-2 py-1 transform -rotate-2 shadow-hard-sm">
+                            <span className="font-black italic text-xl">RAC</span>
                         </div>
-                        <div className="text-right">
-                            <div className="font-mono text-[10px] border border-black px-2 py-1 rounded-full bg-white shadow-sm inline-block">{ISSUE_CONFIG.date}</div>
-                            <div className="text-[10px] font-black tracking-widest mt-2 text-gray-400">{ISSUE_CONFIG.vol}</div>
+                        <div className="text-right font-mono text-xs font-bold leading-tight">
+                            <p>{ISSUE_CONFIG.date}</p>
+                            <p className="bg-black text-white inline-block px-1 mt-1">{ISSUE_CONFIG.vol}</p>
                         </div>
                     </div>
-                    <div className="px-5 mb-8 relative">
-                        <h1 className="font-display text-6xl font-black leading-[0.85] tracking-tighter mix-blend-multiply relative z-10">
-                            WEEKEND<br/><span className="text-[#0047FF]">FLASH</span>
+                    
+                    <div className="px-4 mb-6">
+                        <h1 className="text-6xl font-black italic tracking-tighter leading-[0.85] text-transparent bg-clip-text bg-gradient-to-b from-black to-gray-600 drop-shadow-[2px_2px_0px_#CCFF00]">
+                            WEEKEND<br/>FLASH
                         </h1>
-                        <div className="absolute right-5 bottom-2 w-16 h-16 bg-[#CCFF00] rounded-full blur-[20px] opacity-60 z-0"></div>
                     </div>
+                    
                     <Marquee text="GLOBAL DESIGN NEWS • WEEKLY UPDATE • STAY CREATIVE • STAY FOOLISH" />
                 </div>
             );
@@ -271,33 +287,38 @@
 
         function Section({ data, onArticleClick }) {
             return (
-                <div className="bg-white border-t-2 border-black last:border-b-2">
-                    <div className="p-5 flex items-end justify-between bg-white sticky top-0 z-10 border-b border-black/5 backdrop-blur-sm bg-white/90">
+                <div className={`border-b-[3px] border-black ${data.bgColor}`}>
+                    <div className="p-4 border-b-2 border-black/20 flex justify-between items-end">
                         <div>
-                            <h2 className="font-display font-black text-3xl tracking-tighter uppercase leading-none">{data.title}</h2>
-                            <span className="text-[10px] font-bold text-gray-400 tracking-widest mt-1 block">{data.subtitle}</span>
+                            <div className="font-mono text-[10px] font-bold border border-black inline-block px-1 bg-white mb-1 shadow-[2px_2px_0px_0px_black]">{data.subtitle}</div>
+                            <h2 className={`text-4xl font-black italic tracking-tighter uppercase leading-none ${data.textColor} drop-shadow-[3px_3px_0px_rgba(0,0,0,1)]`}>
+                                {data.title}
+                            </h2>
                         </div>
-                        <div className="w-2 h-2 bg-black rounded-full animate-pulse"></div>
                     </div>
-                    <div className="grid grid-cols-1">
+                    <div>
                         {data.items.map((item, idx) => (
                             <div key={item.id} onClick={() => onArticleClick(item, data)} 
-                                 className="group relative p-5 cursor-pointer border-b border-black/10 last:border-b-0 hover:bg-[#F2F2F2] transition-colors duration-300">
-                                <div className="flex gap-5">
-                                    <div className="font-mono text-lg font-bold text-gray-300 group-hover:text-[#0047FF] transition-colors pt-1">
-                                        {String(idx + 1).padStart(2, '0')}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex flex-wrap gap-2 mb-3">
-                                            {item.tags && item.tags.map(tag => (
-                                                <span key={tag} className="text-[9px] font-bold border border-black/20 px-2 py-0.5 rounded-full bg-white group-hover:border-black group-hover:bg-black group-hover:text-[#CCFF00] transition-all">{tag}</span>
-                                            ))}
-                                        </div>
-                                        <h3 className="text-xl font-bold leading-tight mb-2 group-hover:text-[#0047FF] transition-colors tracking-tight">{item.title}</h3>
-                                        <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">{item.content}</p>
-                                    </div>
-                                    <div className="self-center opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0 duration-300">
-                                        <Icon name="ArrowUpRight" size={24} className="text-[#0047FF]" />
+                                 className="group relative p-5 bg-white border-b-2 border-black last:border-b-0 cursor-pointer hover:bg-black hover:text-white transition-colors duration-200">
+                                <div className="flex justify-between items-start mb-3">
+                                    {/* 核心修正：使用 item.id 显示全局编号，确保连续性 */}
+                                    <span className="font-mono text-xs font-bold border border-black px-1.5 rounded-full group-hover:border-white group-hover:text-[#CCFF00]">
+                                        #{String(item.id).padStart(2, '0')}
+                                    </span>
+                                    <span className="font-mono text-[10px] bg-gray-200 px-1 group-hover:bg-[#333] group-hover:text-white">{item.source} • {item.date}</span>
+                                </div>
+                                <h3 className="text-lg font-black leading-tight mb-2 group-hover:underline decoration-2 underline-offset-4 decoration-[#CCFF00]">{item.title}</h3>
+                                <p className="text-sm font-medium leading-snug text-gray-600 group-hover:text-gray-400 line-clamp-2">{item.content}</p>
+                                
+                                <div className="flex gap-2 mt-3">
+                                    {item.tags && item.tags.map(tag => (
+                                        <span key={tag} className="text-[10px] font-bold border border-black px-1 group-hover:border-[#CCFF00] group-hover:text-[#CCFF00] bg-[#CCFF00]/20 group-hover:bg-transparent">{tag}</span>
+                                    ))}
+                                </div>
+                                
+                                <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="bg-[#CCFF00] text-black rounded-full p-1 border border-black">
+                                        <Icon name="ArrowUpRight" size={16} />
                                     </div>
                                 </div>
                             </div>
@@ -311,102 +332,94 @@
             const [imgError, setImgError] = useState(false);
             const [insight, setInsight] = useState('');
             const [isLoading, setIsLoading] = useState(false);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const audioRef = useRef(new Audio());
 
             useEffect(() => { window.scrollTo(0, 0); }, []);
 
-            const handleGenerateInsight = () => {
-                if (!apiKey) { alert("需配置 API Key"); return; }
+            const handleGenerateInsight = async () => {
+                if (!apiKey) { alert("请在代码中填入 Gemini API Key 才能使用 AI 功能！"); return; }
+                if (insight) return;
                 setIsLoading(true);
+                // 模拟 API 调用
                 setTimeout(() => {
-                    setInsight(`💡 **深度解读**：\n\n该事件反映了行业对于“${article.tags[0] || '技术'}”应用的重新思考...`);
+                    setInsight(`💡 **AI 深度剖析**：\n\n1. **趋势**：${article.title} 反映了当前设计界对技术伦理的重视...\n2. **建议**：申请此类专业时，务必在作品集中展现批判性思维...`);
                     setIsLoading(false);
                 }, 1500);
             };
 
             return (
-                <div className="min-h-screen bg-white animate-slide-up pb-32 relative z-20">
-                    <div className="sticky top-0 z-50 glass px-5 py-4 flex justify-between items-center shadow-sm">
-                        <button onClick={onBack} className="flex items-center gap-2 font-mono text-xs font-bold hover:opacity-60 transition-opacity">
-                            <div className="w-6 h-6 border border-black rounded-full flex items-center justify-center bg-white"><Icon name="ArrowLeft" size={14} /></div>
-                            BACK
+                <div className="min-h-screen bg-[#f4f4f4] animate-fade-in pb-24">
+                    <div className="sticky top-0 z-40 bg-white border-b-[3px] border-black px-4 py-3 flex justify-between items-center shadow-hard-sm">
+                        <button onClick={onBack} className="flex items-center gap-2 font-black text-sm hover:bg-[#CCFF00] px-2 py-1 border-2 border-transparent hover:border-black transition-all">
+                            <Icon name="ArrowLeft" size={18} /> BACK
                         </button>
-                        <div className="font-mono text-[10px] font-bold bg-black text-white px-2 py-1 rounded">{category.title}</div>
+                        <div className="flex gap-2">
+                            <button onClick={() => alert("语音播放需配置API")} className="p-2 border-2 border-black bg-white hover:bg-black hover:text-white transition-colors shadow-hard-sm active:translate-y-1 active:shadow-none">
+                                <Icon name={isPlaying ? "Pause" : "Play"} size={16} />
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="p-5 max-w-2xl mx-auto">
-                        <div className="mb-8 relative group">
-                            <div className="aspect-[4/3] overflow-hidden rounded-2xl border-2 border-black shadow-art bg-gray-100 relative z-10">
+                    <div className="p-4 max-w-2xl mx-auto">
+                        <div className="bg-white border-[3px] border-black shadow-hard p-1 mb-6">
+                            <div className="w-full aspect-video border-b-[3px] border-black overflow-hidden relative bg-gray-100">
                                 {article.image && !imgError ? (
-                                    <img src={article.image} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={() => setImgError(true)} />
+                                    <img src={article.image} alt={article.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
                                 ) : (
                                     <GenArtPlaceholder title={article.title} className="w-full h-full object-cover" />
                                 )}
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-5 pt-20">
-                                    <div className="text-white text-[10px] font-mono mb-1">{article.date} • {article.source}</div>
+                                <div className={`absolute top-0 left-0 px-3 py-1 font-black text-xs text-white ${category.bgColor} border-r-2 border-b-2 border-black`}>
+                                    {category.subtitle.split('/')[0]}
                                 </div>
                             </div>
-                            <div className="absolute -right-2 -bottom-2 w-full h-full rounded-2xl border-2 border-black bg-[#CCFF00] -z-10"></div>
+                            
+                            <div className="p-5">
+                                <h1 className="text-2xl font-black leading-tight mb-4">{article.title}</h1>
+                                <div className="flex justify-between items-center text-xs font-mono font-bold text-gray-500 border-t-2 border-dashed border-gray-300 pt-3">
+                                    <span>SOURCE: {article.source}</span>
+                                    <span>{article.date}</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="mb-10">
-                            <h1 className="font-display text-3xl font-black leading-[1.1] mb-6 tracking-tight">{article.title}</h1>
-                            
-                            {/* 核心情报卡片 (Key Points) */}
-                            {article.key_points && article.key_points.length > 0 && (
-                                <div className="bg-[#CCFF00] p-5 rounded-xl border-2 border-black shadow-hard-sm mb-8">
-                                    <div className="flex items-center gap-2 mb-3 font-bold text-xs border-b border-black/20 pb-2">
-                                        <Icon name="Target" size={16} /> CORE INTEL / 核心情报
-                                    </div>
-                                    <ul className="space-y-2">
-                                        {article.key_points.map((point, i) => (
-                                            <li key={i} className="text-sm font-medium flex items-start gap-2">
-                                                <span className="mt-1"><Icon name="Check" size={14}/></span>
-                                                {point}
-                                            </li>
-                                        ))}
-                                    </ul>
+                        <div className="mb-6">
+                            <button onClick={handleGenerateInsight} disabled={isLoading} className="w-full bg-black text-white font-black py-4 border-[3px] border-black shadow-hard hover:bg-[#CCFF00] hover:text-black transition-all active:translate-y-1 active:shadow-none flex items-center justify-center gap-2">
+                                {isLoading ? "ANALYZING..." : <><Icon name="Sparkles" size={18}/> AI 深度解读 / DEEP DIVE</>}
+                            </button>
+                            {insight && (
+                                <div className="mt-4 bg-[#CCFF00]/10 border-2 border-black p-4 text-sm font-medium leading-relaxed whitespace-pre-wrap">
+                                    {insight}
                                 </div>
                             )}
+                        </div>
 
-                            {/* 涉及专业标签 */}
-                            {article.relevant_majors && (
-                                <div className="flex flex-wrap gap-2 mb-8">
-                                    <div className="flex items-center gap-1 bg-black text-white px-2 py-1 rounded text-[10px] font-bold">
-                                        <Icon name="Target" size={12} /> 涉及专业
-                                    </div>
-                                    {article.relevant_majors.map((major, i) => (
-                                        <span key={i} className="text-[10px] font-bold border border-black/20 px-2 py-1 rounded bg-[#F2F2F2] text-gray-600">{major}</span>
-                                    ))}
-                                </div>
-                            )}
-
-                            <div className="article-content" dangerouslySetInnerHTML={{ __html: article.fullContent }} />
+                        <div className="bg-white border-2 border-black p-6 shadow-hard-sm mb-8 article-content">
+                            <div dangerouslySetInnerHTML={{ __html: article.fullContent }} />
                             
                             {article.url && (
-                                <a href={article.url} target="_blank" className="inline-flex items-center gap-2 mt-8 text-xs font-bold border-b border-black pb-0.5 hover:text-[#0047FF] hover:border-[#0047FF] transition-colors">
-                                    READ ORIGINAL SOURCE <Icon name="ExternalLink" size={12}/>
+                                <a href={article.url} target="_blank" rel="noreferrer" className="block mt-8 text-center border-2 border-black border-dashed py-3 font-bold hover:bg-gray-50 hover:border-solid transition-all text-sm">
+                                    READ ORIGINAL SOURCE <Icon name="ExternalLink" size={12} className="inline ml-1"/>
                                 </a>
                             )}
                         </div>
 
-                        {/* Expert Opinion Card */}
-                        <div className="relative mt-12 p-6 rounded-2xl bg-gradient-to-br from-[#0047FF] to-[#002db3] text-white shadow-float overflow-hidden">
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-8 h-8 rounded-full bg-[#CCFF00] flex items-center justify-center text-black">
-                                        <Icon name="Bot" size={16} />
-                                    </div>
-                                    <span className="font-mono text-xs font-bold tracking-widest text-[#CCFF00]">RAC OPINION</span>
-                                </div>
-                                <p className="text-sm font-medium leading-relaxed mb-6 opacity-90">
-                                    “{article.analysis || "此事件对26Fall申请有重要参考价值。建议将相关技术应用到你的作品集迭代中。"}”
-                                </p>
-                                <a href={CS_LINK} target="_blank" className="block w-full text-center bg-white text-black py-3 rounded-lg font-bold text-xs hover:bg-[#CCFF00] transition-colors shadow-lg active:scale-[0.98] transform duration-100">
-                                    预约 1v1 作品集评估
-                                </a>
+                        <div className="bg-[#0047FF] border-[3px] border-black text-white p-5 shadow-hard relative overflow-hidden group">
+                            <div className="absolute -right-4 -top-4 opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-500">
+                                <Icon name="Bot" size={120} />
                             </div>
-                            <div className="absolute -right-10 -bottom-10 opacity-10 rotate-12">
-                                <Icon name="Zap" size={200} />
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="bg-[#CCFF00] text-black px-2 py-0.5 text-xs font-black border border-black transform -rotate-2">RAC OPINION</div>
+                                    <h3 className="font-black italic text-lg">专家犀利点评</h3>
+                                </div>
+                                <p className="text-sm font-medium leading-relaxed opacity-90 mb-4 pr-8">
+                                    {article.analysis || "这条资讯背后隐藏着26Fall申请的重要风向标。对于目前处于高二/大二阶段的学生，现在调整作品集方向还来得及。切记：不要让你的努力用错了方向。"}
+                                </p>
+                                <a href={CS_LINK} target="_blank" className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 font-black text-xs border-2 border-black hover:bg-[#CCFF00] transition-colors shadow-[2px_2px_0px_0px_black] active:translate-y-0.5 active:shadow-none">
+                                    <Icon name="MessageCircle" size={14} />
+                                    预约 1v1 申请评估
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -416,9 +429,11 @@
 
         function Footer() {
             return (
-                <div className="bg-[#F2F2F2] p-10 text-center border-t border-black/10 mt-auto">
-                    <div className="font-display font-black text-2xl mb-2 tracking-tighter opacity-20">RAC STUDIO</div>
-                    <p className="font-mono text-[10px] text-gray-400">DESIGN YOUR FUTURE • SINCE 2011</p>
+                <div className="bg-white p-8 text-center border-t-[3px] border-black mt-auto">
+                    <div className="inline-block border-2 border-black p-3 mb-4 bg-black text-white shadow-hard-sm transform rotate-1">
+                        <h2 className="text-xl font-black italic">RAC STUDIO</h2>
+                    </div>
+                    <p className="text-[10px] font-mono font-bold text-gray-400">DESIGN YOUR FUTURE • SINCE 2011</p>
                 </div>
             );
         }
@@ -432,38 +447,25 @@
                 setActiveCategory(category); 
             };
 
-            const handleExport = async () => {
-                const root = document.getElementById('root');
-                root.classList.add('capturing');
-                try {
-                    const canvas = await html2canvas(root, { scale: 2, useCORS: true });
-                    const link = document.createElement('a');
-                    link.download = `RAC-NEWS-${new Date().getTime()}.png`;
-                    link.href = canvas.toDataURL();
-                    link.click();
-                } finally { root.classList.remove('capturing'); }
-            };
-
             return (
-                <div className="w-full max-w-[420px] bg-[#F2F2F2] border-0 sm:border-[1px] border-[#ccc] shadow-2xl relative min-h-screen font-sans mx-auto">
+                <div className="w-full max-w-[420px] bg-white border-0 sm:border-[3px] border-black shadow-2xl relative min-h-screen font-sans">
                     {activeArticle ? (
                         <DetailView article={activeArticle} category={activeCategory} onBack={() => setActiveArticle(null)} />
                     ) : (
                         <>
                             <Header />
-                            {SECTIONS.map(section => (
-                                <Section key={section.id} data={section} onArticleClick={(a, c) => { setActiveArticle(a); setActiveCategory(c); }} />
-                            ))}
+                            <div>
+                                {SECTIONS.map(section => (
+                                    <Section key={section.id} data={section} onArticleClick={handleArticleClick} />
+                                ))}
+                            </div>
                             <Footer />
                         </>
                     )}
                     
-                    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-4">
-                        <button onClick={handleExport} className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform text-black">
-                            <Icon name="Image" size={20} />
-                        </button>
-                        <a href={CS_LINK} target="_blank" className="w-14 h-14 bg-[#CCFF00] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform text-black border-2 border-black">
-                            <Icon name="MessageCircle" size={26} />
+                    <div className="fixed bottom-6 right-6 z-50">
+                        <a href={CS_LINK} target="_blank" className="flex items-center justify-center w-14 h-14 bg-[#CCFF00] border-[3px] border-black rounded-full shadow-hard hover:scale-110 transition-transform active:shadow-none active:translate-y-1">
+                            <Icon name="MessageCircle" size={24} className="text-black" />
                         </a>
                     </div>
                 </div>
