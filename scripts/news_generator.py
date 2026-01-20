@@ -8,7 +8,7 @@ from google.genai.errors import ClientError
 
 
 OUTPUT_PATH = "public/data/latest.json"
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-3.0-flash"
 
 
 def generate_news_content():
