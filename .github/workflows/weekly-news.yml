@@ -2,7 +2,7 @@ name: Weekly News Auto Update
 
 on:
   schedule:
-    # 每周六 UTC 04:00（北京时间 12:00）
+    # 每周六 UTC 04:00 (北京时间 12:00)
     - cron: '0 4 * * 6'
   workflow_dispatch:
 
@@ -18,14 +18,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install google-genai
+          pip install --upgrade google-genai
 
       - name: Generate News Content
         env:
@@ -36,9 +35,7 @@ jobs:
         run: |
           git config --global user.name "RAC-Bot"
           git config --global user.email "bot@racstudio.cn"
-
           git add index.html
-
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
