@@ -7,7 +7,7 @@ from google import genai
 # =========================
 # 基础配置
 # =========================
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-3.0-flash"
 TARGET_TOTAL = 30
 OUTPUT_FILE = "data/news.json"
 
@@ -17,7 +17,7 @@ SECTIONS = [
     ("University", "世界顶尖院校官方动态", 5),
     (
         "Design",
-        "设计 / 艺术 / 建筑 / 数字媒体 / 游戏 / 交互 / 工业 / 视觉等专业趋势与课程变化",
+        "设计 / 艺术 / 城市建筑 / 数字媒体 / 游戏 / 交互 / 工业 / 视觉等专业趋势与课程变化",
         5,
     ),
     ("Summer", "Summer School / 暑期科研项目", 5),
@@ -74,7 +74,7 @@ def generate_by_section(
         Output ONLY a JSON array.
         Each item must include:
         - title
-        - summary (2–3 sentences)
+        - summary （400-500 words)
         - source (organization / media / institution)
         - url (real, starts with https)
         """
