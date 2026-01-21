@@ -24,6 +24,39 @@ SECTIONS = [
     ("Competitions", "截止时间在未来的国际权威竞赛", 5),
 ]
 
+<script type="text/babel">
+const { useEffect, useState } = React;
+
+function App() {
+  const [news, setNews] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("./data/news.json?_=" + Date.now())
+      .then(res => res.json())
+      .then(data => {
+        setNews(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to load news.json", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return <div className="p-6 text-center">Loading Weekly News…</div>;
+  }
+
+  if (!news || news.total !== 30) {
+    return <div className="p-6 text-red-600">News data invalid.</div>;
+  }
+
+  return <NewsLayout data={news} />;
+}
+</script>
+
+
 # =========================
 # 工具函数
 # =========================
