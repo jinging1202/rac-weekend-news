@@ -1,0 +1,73 @@
+RAC 周末闪讯部署指南
+
+1. 准备工作
+
+一个 GitHub 账号
+
+一个 Google Gemini API Key (可以在 Google AI Studio 免费申请)
+
+(可选) Cloudflare 账号 (推荐) 或直接使用 GitHub Pages
+
+2. 仓库设置
+
+将本项目代码 Fork 或 Push 到你的 GitHub 仓库。
+
+进入仓库 Settings -> Secrets and variables -> Actions。
+
+点击 New repository secret。
+
+Name: GEMINI_API_KEY
+
+Value: 粘贴你的 Gemini API Key
+
+3. 启用 GitHub Actions
+
+进入仓库 Actions 标签页。
+
+确保 Weekly Auto Update workflow 已启用。
+
+你可以点击 Run workflow 手动测试一次生成逻辑。
+
+4. 静态页面托管
+
+方案 A: Cloudflare Pages (推荐，国内访问快)
+
+登录 Cloudflare Dashboard。
+
+进入 Workers & Pages -> Create Application -> Pages -> Connect to Git。
+
+选择你的 GitHub 仓库。
+
+Build settings:
+
+Framework preset: None
+
+Build command: (留空)
+
+Output directory: (留空，即根目录)
+
+点击 Save and Deploy。
+
+方案 B: GitHub Pages
+
+进入仓库 Settings -> Pages。
+
+Source 选择 Deploy from a branch。
+
+Branch 选择 main (或 master) / root。
+
+保存，等待几分钟即可访问。
+
+5. 常见问题
+
+图片无法显示？ - 前端已内置 Canvas 生成艺术兜底，若原新闻链接没有提取到图片，会自动生成新丑风几何画。
+
+自动化脚本报错？
+
+检查 API Key 是否有效。
+
+检查 scripts/news_generator.py 中的 google-genai SDK 版本是否兼容。
+
+微信分享不显示卡片？
+
+微信分享卡片需要通过微信 JS-SDK 签名，这需要一个后端服务器。作为纯静态 H5，建议使用页面内的 "长图导出" 功能生成图片进行分享。
