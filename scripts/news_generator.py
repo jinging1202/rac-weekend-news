@@ -9,7 +9,7 @@ from google.genai import types
 # ================= 配置区 =================
 API_KEY = os.environ.get("GEMINI_API_KEY")
 HTML_FILE_PATH = "index.html"
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-3.0-flash"
 
 SECTIONS = ["global", "education", "university", "design", "summer", "competitions"]
 ITEMS_PER_SECTION = 5  # 每板块条数
