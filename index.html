@@ -1,479 +1,70 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>RAC 周末闪讯 | Global Design News</title>
-    
-    <!-- 1. 样式库：Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. 截图库 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <!-- 3. 核心库 -->
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
-    
-    <style>
-        /* 新丑风核心字体设置 */
-        body { 
-            font-family: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-            background-color: #f0f0f0;
-            background-image: radial-gradient(#000 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-        .font-mono { font-family: "Courier New", Courier, monospace; }
-        
-        /* 隐藏滚动条 */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* 动画定义 */
-        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .animate-marquee { display: flex; animation: marquee 10s linear infinite; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        /* 硬核阴影工具类 */
-        .shadow-hard { box-shadow: 4px 4px 0px 0px #000; }
-        .shadow-hard-sm { box-shadow: 2px 2px 0px 0px #000; }
-        .shadow-hard-lg { box-shadow: 8px 8px 0px 0px #000; }
-        
-        /* 截图模式样式 */
-        .capturing .hide-on-capture { display: none !important; }
-        .capturing { width: 420px !important; max-width: 420px !important; height: auto !important; overflow: visible !important; border: none !important; box-shadow: none !important; }
-
-        /* 详情页排版 */
-        .article-content p { margin-bottom: 1.2rem; line-height: 1.7; text-align: justify; font-size: 0.95rem; color: #1a1a1a; }
-        .article-content h4 { font-weight: 900; font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.8rem; background: #CCFF00; display: inline-block; padding: 2px 8px; border: 2px solid #000; box-shadow: 2px 2px 0px 0px #000; transform: rotate(-1deg); }
-        .article-content ul { list-style: square; padding-left: 1.2rem; margin-bottom: 1.5rem; font-family: "Courier New", monospace; font-size: 0.9rem; }
-        .article-content li { margin-bottom: 0.5rem; }
-    </style>
+  <meta charset="UTF-8">
+  <title>RAC Weekly News</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-[#E0E0E0] min-h-screen flex justify-center selection:bg-[#CCFF00] selection:text-black">
-    <div id="root" class="w-full max-w-[420px] min-h-screen bg-white border-x-0 sm:border-x-[3px] border-black relative"></div>
-    <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
-        
-        // =================================================================
-        // 👇👇👇【每周更新区】 (自动化脚本会自动覆盖这里的数据) 👇👇👇
-        // =================================================================
+<body>
+  <div id="root"></div>
 
-        const ISSUE_CONFIG = {
-            vol: "VOL.03",           
-            week: "WEEK 03",         
-            date: "2026.01.18",      
-            year: "2026"
-        };
+  <script type="text/javascript">
+    // 初始版本信息
+    const ISSUE_CONFIG = {
+      vol: "VOL.00",
+      week: "Week 00",
+      date: "0000.00.00",
+      year: "0000"
+    };
 
-        const apiKey = ""; 
+    // 初始空数据
+    const SECTIONS = [];
+  </script>
 
-        // 模拟数据：ID 现已调整为全局连续 (1, 2, 3...)
-        const SECTIONS = [
-            {
-                id: 'global',
-                title: 'GLOBAL NEWS',
-                subtitle: '全球热点 / VISION',
-                bgColor: 'bg-[#FF4D00]',
-                textColor: 'text-white',
-                items: [
-                    { 
-                        id: 1, 
-                        title: "《疯狂动物城2》金球奖封神！动画电影迎来新巅峰", 
-                        content: "流媒体动画收视率创历史新高，艺术留学作品集选题大热方向。", 
-                        source: "Golden Globes", 
-                        date: "01.05", 
-                        image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop", 
-                        tags: ["ANIMATION", "FILM", "TRENDS"],
-                        url: "https://goldenglobes.com/",
-                        fullContent: `<p>第83届金球奖落幕，迪士尼新作再次证明了叙事的力量。对于申请生来说，这不仅是一个奖项，更是行业风向标。</p><h4>导师解读</h4><p>不要只看热闹。注意片中对光影技术的新尝试，这直接对应了 CalArts 和 Ringling 等名校对“技术与艺术结合”的考察重点。</p>`,
-                        analysis: "这不仅仅是动画专业的狂欢。对于申请皇艺、伦艺的同学，请思考：如何用传统的叙事技巧，结合最新的渲染技术（如NPR）来讲好一个‘普世价值’的故事？招生官想看到的不是炫技，而是共情能力。"
-                    },
-                    { 
-                        id: 2, 
-                        title: "CES 2026：再见了屏幕？AI 投影交互成未来主流", 
-                        content: "无屏幕交互硬件爆发，交互设计专业将迎来巨大课程改革。", 
-                        source: "The Verge", 
-                        date: "01.10", 
-                        // image: "", // 故意留空测试自动占位图
-                        tags: ["HCI", "AI", "FUTURE"],
-                        url: "https://www.theverge.com/ces",
-                        fullContent: `<p>CES 2026 展示了大量“去屏幕化”设备。Humane Pin 的迭代产品彻底引爆了全息投影交互的讨论。</p><h4>作品集策略</h4><p>还在画 App 界面？过时了。现在的作品集需要展示你对 VUI (语音交互) 和 Gesture Control (手势控制) 的理解。</p>`,
-                        analysis: "屏幕时代的 UI 设计红利已尽。对于交互设计（IxD）和服务设计（SD）的同学，现在的机会在于‘隐形交互’。家长需要明白，孩子学的不是‘画图标’，而是设计人与机器沟通的逻辑。"
-                    }
-                ]
-            },
-            {
-                id: 'education',
-                title: 'EDUCATION',
-                subtitle: '教育观察 / INSIGHT',
-                bgColor: 'bg-[#CCFF00]',
-                textColor: 'text-black',
-                items: [
-                     { 
-                        id: 3, 
-                        title: "预警！英国2026学年本科与生活费全面涨价", 
-                        content: "伦敦地区生活成本预估增加15%，家长需提前做好资金储备。", 
-                        source: "GOV.UK", 
-                        date: "01.07", 
-                        image: "https://images.unsplash.com/photo-1526304640152-d4619684e484?q=80&w=1000&auto=format&fit=crop",
-                        tags: ["MONEY", "UK", "POLICY"],
-                        url: "https://www.gov.uk/student-finance",
-                        fullContent: `<p>通胀压力下，留英成本显著上升。这不仅影响学费，更直接体现在房租和日常开销上。</p>`,
-                        analysis: "涨价不可逆，但策略可调整。建议家长关注非伦敦地区的名校（如格拉斯哥、爱丁堡），性价比更高。同时，不仅要准备保证金，更要提前规划孩子的‘求职力’，尽早通过实习回本。"
-                     },
-                     {
-                        id: 4,
-                        title: "QS 2026亚洲排名：港大霸榜，新二所竞争白热化",
-                        content: "亚洲留学性价比持续走高，港大、国大、清华分列前三。",
-                        source: "QS Official",
-                        date: "01.06",
-                        image: "https://images.unsplash.com/photo-1590053123594-8703a43fa934?q=80&w=1000&auto=format&fit=crop",
-                        tags: ["RANKING", "ASIA", "TOP"],
-                        url: "https://www.topuniversities.com",
-                        fullContent: `<p>亚洲高等教育崛起已成定局。对于想兼顾排名和费用的家庭，新二所（NUS/NTU）和港三所是绝佳选择。</p>`,
-                        analysis: "不要带有‘亚洲不如欧美’的偏见。对于回国就业，QS 排名的权重依然很高。港新地区的硕士学制短、排名高，是典型的‘快准狠’高回报投资，适合目标明确的实用主义家庭。"
-                     }
-                ]
-            },
-            {
-                id: 'design',
-                title: 'TECH & DESIGN',
-                subtitle: '前沿设计 / FUTURE',
-                bgColor: 'bg-[#FF00FF]',
-                textColor: 'text-white',
-                items: [
-                    {
-                        id: 5,
-                        title: "触觉反馈爆发：不仅能看，还能“摸”到虚拟世界",
-                        content: "多模态交互逻辑成为交互设计专业必备技能。",
-                        source: "TechCrunch",
-                        date: "01.09",
-                        image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop",
-                        tags: ["HAPTICS", "VR", "TECH"],
-                        url: "https://techcrunch.com",
-                        fullContent: `<p>触觉反馈背心和手套的民用化，标志着元宇宙体验完成了最后一块拼图。</p>`,
-                        analysis: "如果你还在纠结作品集的视觉风格，不妨换个赛道。‘多感官体验设计’（Multi-sensory Design）是目前的蓝海。尝试在项目中加入对触觉、听觉甚至嗅觉的思考，会让招生官眼前一亮。"
-                    }
-                ]
-            }
-        ];
+  <script type="text/babel">
+    const SECTION_META = {
+      Global: { title: "GLOBAL NEWS", subtitle: "全球热点 / VISION", color: "bg-[#FF4D00] text-white" },
+      Education: { title: "EDUCATION", subtitle: "教育观察 / INSIGHT", color: "bg-[#CCFF00] text-black" },
+      University: { title: "UNIVERSITY", subtitle: "院校动态 / UPDATE", color: "bg-[#0047FF] text-white" },
+      Design: { title: "TECH & DESIGN", subtitle: "前沿设计 / FUTURE", color: "bg-[#FF00FF] text-white" },
+      Summer: { title: "LABS", subtitle: "夏校科研 / SUMMER", color: "bg-[#00FF94] text-black" },
+      Competitions: { title: "COMPETITIONS", subtitle: "竞赛信息 / TROPHY", color: "bg-[#1A1A1A] text-white" }
+    };
 
-        const CS_LINK = "https://work.weixin.qq.com/kfid/kfc3dbd2c4dc22c9e4f";
-
-        // --- 图标组件 ---
-        const Icon = ({ name, size = 24, className = "" }) => {
-            const icons = {
-                ArrowLeft: <><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></>,
-                ArrowUpRight: <><path d="M7 7h10v10"/><path d="M7 17 17 7"/></>,
-                ExternalLink: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></>,
-                Sparkles: <><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></>,
-                Play: <polygon points="5 3 19 12 5 21 5 3"/>,
-                Pause: <><rect width="4" height="16" x="6" y="4"/><rect width="4" height="16" x="14" y="4"/></>,
-                Bot: <><rect width="18" height="10" x="3" y="11" rx="2" /><circle cx="12" cy="5" r="2" /><path d="M12 7v4" /><line x1="8" y1="16" x2="8" y2="16" /><line x1="16" y1="16" x2="16" y2="16" /></>,
-                Image: <><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>,
-                X: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
-                MessageCircle: <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>,
-                Zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
-                Eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
-                Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
-                Tag: <><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r="3"/></>
-            };
-            return (
-                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                    {icons[name]}
-                </svg>
-            );
-        };
-
-        // --- 生成式艺术组件 (Generative Art) ---
-        const GenArtPlaceholder = ({ title, className }) => {
-            const canvasRef = useRef(null);
-
-            useEffect(() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                
-                let seed = 0;
-                for (let i = 0; i < title.length; i++) seed = (seed + title.charCodeAt(i)) % 10000;
-                const random = () => {
-                    seed = (seed * 9301 + 49297) % 233280;
-                    return seed / 233280;
-                };
-
-                const colors = ['#CCFF00', '#FF00FF', '#0047FF', '#FF4D00', '#FFFFFF', '#000000'];
-                const bgColor = colors[Math.floor(random() * 4)];
-                
-                const w = canvas.width;
-                const h = canvas.height;
-                ctx.fillStyle = bgColor;
-                ctx.fillRect(0, 0, w, h);
-
-                const shapesCount = 3 + Math.floor(random() * 5);
-                for (let i = 0; i < shapesCount; i++) {
-                    ctx.fillStyle = colors[Math.floor(random() * colors.length)];
-                    ctx.strokeStyle = '#000000';
-                    ctx.lineWidth = 3;
-                    
-                    const type = Math.floor(random() * 3);
-                    const x = random() * w;
-                    const y = random() * h;
-                    const size = 20 + random() * 80;
-
-                    ctx.beginPath();
-                    if (type === 0) { 
-                        ctx.arc(x, y, size/2, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.stroke();
-                    } else if (type === 1) { 
-                        ctx.rect(x - size/2, y - size/2, size, size);
-                        ctx.fill();
-                        ctx.stroke();
-                    } else { 
-                        ctx.beginPath();
-                        for(let j=0; j<5; j++) {
-                            ctx.moveTo(x - size/2, y - size/2 + j*10);
-                            ctx.lineTo(x + size/2, y - size/2 + j*10);
-                        }
-                        ctx.stroke();
-                    }
-                }
-
-                for (let i = 0; i < 500; i++) {
-                    ctx.fillStyle = Math.random() > 0.5 ? '#000' : '#fff';
-                    ctx.fillRect(random() * w, random() * h, 2, 2);
-                }
-
-            }, [title]);
-
-            return <canvas ref={canvasRef} width="600" height="400" className={className} />;
-        };
-
-        const Marquee = ({ text }) => (
-            <div className="bg-[#CCFF00] border-y-2 border-black py-2 overflow-hidden whitespace-nowrap relative z-20">
-                <div className="animate-marquee inline-block">
-                    <span className="text-sm font-black mx-4 font-mono">{text} /// {text} /// {text} /// {text}</span>
-                </div>
+    function NewsSection({ meta, items }) {
+      return (
+        <div className={`p-4 ${meta.color}`}>
+          <h2>{meta.title}</h2>
+          <h3>{meta.subtitle}</h3>
+          {items.map(item => (
+            <div key={item.id} className="my-2 border-b border-gray-200">
+              <a href={item.url} target="_blank" rel="noopener noreferrer"><h4>{item.title}</h4></a>
+              <p>{item.content}</p>
+              <small>{item.date} | {item.source}</small>
             </div>
-        );
+          ))}
+        </div>
+      );
+    }
 
-        function Header({ onMenuClick }) {
-            return (
-                <div className="bg-white text-black pt-4 pb-0 relative border-b-[3px] border-black">
-                    <div className="px-4 flex justify-between items-start mb-4">
-                        <div className="border-2 border-black bg-black text-white px-2 py-1 transform -rotate-2 shadow-hard-sm">
-                            <span className="font-black italic text-xl">RAC</span>
-                        </div>
-                        <div className="text-right font-mono text-xs font-bold leading-tight">
-                            <p>{ISSUE_CONFIG.date}</p>
-                            <p className="bg-black text-white inline-block px-1 mt-1">{ISSUE_CONFIG.vol}</p>
-                        </div>
-                    </div>
-                    
-                    <div className="px-4 mb-6">
-                        <h1 className="text-6xl font-black italic tracking-tighter leading-[0.85] text-transparent bg-clip-text bg-gradient-to-b from-black to-gray-600 drop-shadow-[2px_2px_0px_#CCFF00]">
-                            WEEKEND<br/>FLASH
-                        </h1>
-                    </div>
-                    
-                    <Marquee text="GLOBAL DESIGN NEWS • WEEKLY UPDATE • STAY CREATIVE • STAY FOOLISH" />
-                </div>
-            );
-        }
+    function NewsLayout({ data }) {
+      const grouped = data.reduce((acc, item) => {
+        acc[item.id] = item.items;
+        return acc;
+      }, {});
 
-        function Section({ data, onArticleClick }) {
-            return (
-                <div className={`border-b-[3px] border-black ${data.bgColor}`}>
-                    <div className="p-4 border-b-2 border-black/20 flex justify-between items-end">
-                        <div>
-                            <div className="font-mono text-[10px] font-bold border border-black inline-block px-1 bg-white mb-1 shadow-[2px_2px_0px_0px_black]">{data.subtitle}</div>
-                            <h2 className={`text-4xl font-black italic tracking-tighter uppercase leading-none ${data.textColor} drop-shadow-[3px_3px_0px_rgba(0,0,0,1)]`}>
-                                {data.title}
-                            </h2>
-                        </div>
-                    </div>
-                    <div>
-                        {data.items.map((item, idx) => (
-                            <div key={item.id} onClick={() => onArticleClick(item, data)} 
-                                 className="group relative p-5 bg-white border-b-2 border-black last:border-b-0 cursor-pointer hover:bg-black hover:text-white transition-colors duration-200">
-                                <div className="flex justify-between items-start mb-3">
-                                    {/* 核心修正：使用 item.id 显示全局编号，确保连续性 */}
-                                    <span className="font-mono text-xs font-bold border border-black px-1.5 rounded-full group-hover:border-white group-hover:text-[#CCFF00]">
-                                        #{String(item.id).padStart(2, '0')}
-                                    </span>
-                                    <span className="font-mono text-[10px] bg-gray-200 px-1 group-hover:bg-[#333] group-hover:text-white">{item.source} • {item.date}</span>
-                                </div>
-                                <h3 className="text-lg font-black leading-tight mb-2 group-hover:underline decoration-2 underline-offset-4 decoration-[#CCFF00]">{item.title}</h3>
-                                <p className="text-sm font-medium leading-snug text-gray-600 group-hover:text-gray-400 line-clamp-2">{item.content}</p>
-                                
-                                <div className="flex gap-2 mt-3">
-                                    {item.tags && item.tags.map(tag => (
-                                        <span key={tag} className="text-[10px] font-bold border border-black px-1 group-hover:border-[#CCFF00] group-hover:text-[#CCFF00] bg-[#CCFF00]/20 group-hover:bg-transparent">{tag}</span>
-                                    ))}
-                                </div>
-                                
-                                <div className="absolute right-4 bottom-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <div className="bg-[#CCFF00] text-black rounded-full p-1 border border-black">
-                                        <Icon name="ArrowUpRight" size={16} />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
-        }
+      return (
+        <div className="space-y-8 p-4">
+          {Object.keys(SECTION_META).map(sec => (
+            <NewsSection key={sec} meta={SECTION_META[sec]} items={grouped[sec] || []} />
+          ))}
+        </div>
+      );
+    }
 
-        function DetailView({ article, category, onBack }) {
-            const [imgError, setImgError] = useState(false);
-            const [insight, setInsight] = useState('');
-            const [isLoading, setIsLoading] = useState(false);
-            const [isPlaying, setIsPlaying] = useState(false);
-            const audioRef = useRef(new Audio());
-
-            useEffect(() => { window.scrollTo(0, 0); }, []);
-
-            const handleGenerateInsight = async () => {
-                if (!apiKey) { alert("请在代码中填入 Gemini API Key 才能使用 AI 功能！"); return; }
-                if (insight) return;
-                setIsLoading(true);
-                // 模拟 API 调用
-                setTimeout(() => {
-                    setInsight(`💡 **AI 深度剖析**：\n\n1. **趋势**：${article.title} 反映了当前设计界对技术伦理的重视...\n2. **建议**：申请此类专业时，务必在作品集中展现批判性思维...`);
-                    setIsLoading(false);
-                }, 1500);
-            };
-
-            return (
-                <div className="min-h-screen bg-[#f4f4f4] animate-fade-in pb-24">
-                    <div className="sticky top-0 z-40 bg-white border-b-[3px] border-black px-4 py-3 flex justify-between items-center shadow-hard-sm">
-                        <button onClick={onBack} className="flex items-center gap-2 font-black text-sm hover:bg-[#CCFF00] px-2 py-1 border-2 border-transparent hover:border-black transition-all">
-                            <Icon name="ArrowLeft" size={18} /> BACK
-                        </button>
-                        <div className="flex gap-2">
-                            <button onClick={() => alert("语音播放需配置API")} className="p-2 border-2 border-black bg-white hover:bg-black hover:text-white transition-colors shadow-hard-sm active:translate-y-1 active:shadow-none">
-                                <Icon name={isPlaying ? "Pause" : "Play"} size={16} />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="p-4 max-w-2xl mx-auto">
-                        <div className="bg-white border-[3px] border-black shadow-hard p-1 mb-6">
-                            <div className="w-full aspect-video border-b-[3px] border-black overflow-hidden relative bg-gray-100">
-                                {article.image && !imgError ? (
-                                    <img src={article.image} alt={article.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
-                                ) : (
-                                    <GenArtPlaceholder title={article.title} className="w-full h-full object-cover" />
-                                )}
-                                <div className={`absolute top-0 left-0 px-3 py-1 font-black text-xs text-white ${category.bgColor} border-r-2 border-b-2 border-black`}>
-                                    {category.subtitle.split('/')[0]}
-                                </div>
-                            </div>
-                            
-                            <div className="p-5">
-                                <h1 className="text-2xl font-black leading-tight mb-4">{article.title}</h1>
-                                <div className="flex justify-between items-center text-xs font-mono font-bold text-gray-500 border-t-2 border-dashed border-gray-300 pt-3">
-                                    <span>SOURCE: {article.source}</span>
-                                    <span>{article.date}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="mb-6">
-                            <button onClick={handleGenerateInsight} disabled={isLoading} className="w-full bg-black text-white font-black py-4 border-[3px] border-black shadow-hard hover:bg-[#CCFF00] hover:text-black transition-all active:translate-y-1 active:shadow-none flex items-center justify-center gap-2">
-                                {isLoading ? "ANALYZING..." : <><Icon name="Sparkles" size={18}/> AI 深度解读 / DEEP DIVE</>}
-                            </button>
-                            {insight && (
-                                <div className="mt-4 bg-[#CCFF00]/10 border-2 border-black p-4 text-sm font-medium leading-relaxed whitespace-pre-wrap">
-                                    {insight}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="bg-white border-2 border-black p-6 shadow-hard-sm mb-8 article-content">
-                            <div dangerouslySetInnerHTML={{ __html: article.fullContent }} />
-                            
-                            {article.url && (
-                                <a href={article.url} target="_blank" rel="noreferrer" className="block mt-8 text-center border-2 border-black border-dashed py-3 font-bold hover:bg-gray-50 hover:border-solid transition-all text-sm">
-                                    READ ORIGINAL SOURCE <Icon name="ExternalLink" size={12} className="inline ml-1"/>
-                                </a>
-                            )}
-                        </div>
-
-                        <div className="bg-[#0047FF] border-[3px] border-black text-white p-5 shadow-hard relative overflow-hidden group">
-                            <div className="absolute -right-4 -top-4 opacity-20 transform rotate-12 group-hover:rotate-0 transition-transform duration-500">
-                                <Icon name="Bot" size={120} />
-                            </div>
-                            <div className="relative z-10">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="bg-[#CCFF00] text-black px-2 py-0.5 text-xs font-black border border-black transform -rotate-2">RAC OPINION</div>
-                                    <h3 className="font-black italic text-lg">专家犀利点评</h3>
-                                </div>
-                                <p className="text-sm font-medium leading-relaxed opacity-90 mb-4 pr-8">
-                                    {article.analysis || "这条资讯背后隐藏着26Fall申请的重要风向标。对于目前处于高二/大二阶段的学生，现在调整作品集方向还来得及。切记：不要让你的努力用错了方向。"}
-                                </p>
-                                <a href={CS_LINK} target="_blank" className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 font-black text-xs border-2 border-black hover:bg-[#CCFF00] transition-colors shadow-[2px_2px_0px_0px_black] active:translate-y-0.5 active:shadow-none">
-                                    <Icon name="MessageCircle" size={14} />
-                                    预约 1v1 申请评估
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        function Footer() {
-            return (
-                <div className="bg-white p-8 text-center border-t-[3px] border-black mt-auto">
-                    <div className="inline-block border-2 border-black p-3 mb-4 bg-black text-white shadow-hard-sm transform rotate-1">
-                        <h2 className="text-xl font-black italic">RAC STUDIO</h2>
-                    </div>
-                    <p className="text-[10px] font-mono font-bold text-gray-400">DESIGN YOUR FUTURE • SINCE 2011</p>
-                </div>
-            );
-        }
-
-        function App() {
-            const [activeArticle, setActiveArticle] = useState(null);
-            const [activeCategory, setActiveCategory] = useState(null);
-
-            const handleArticleClick = (article, category) => { 
-                setActiveArticle(article); 
-                setActiveCategory(category); 
-            };
-
-            return (
-                <div className="w-full max-w-[420px] bg-white border-0 sm:border-[3px] border-black shadow-2xl relative min-h-screen font-sans">
-                    {activeArticle ? (
-                        <DetailView article={activeArticle} category={activeCategory} onBack={() => setActiveArticle(null)} />
-                    ) : (
-                        <>
-                            <Header />
-                            <div>
-                                {SECTIONS.map(section => (
-                                    <Section key={section.id} data={section} onArticleClick={handleArticleClick} />
-                                ))}
-                            </div>
-                            <Footer />
-                        </>
-                    )}
-                    
-                    <div className="fixed bottom-6 right-6 z-50">
-                        <a href={CS_LINK} target="_blank" className="flex items-center justify-center w-14 h-14 bg-[#CCFF00] border-[3px] border-black rounded-full shadow-hard hover:scale-110 transition-transform active:shadow-none active:translate-y-1">
-                            <Icon name="MessageCircle" size={24} className="text-black" />
-                        </a>
-                    </div>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+    ReactDOM.render(<NewsLayout data={SECTIONS} />, document.getElementById("root"));
+  </script>
 </body>
 </html>
